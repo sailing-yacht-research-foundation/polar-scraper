@@ -1,0 +1,7 @@
+const path = require('path');
+
+module.exports = {
+  'models-path': path.resolve('src', 'models', 'syrf-schema'),
+  config: path.resolve('ignorelist', 'database', 'config.json'),
+  'migrations-path': path.resolve('src', 'models', 'syrf-schema', 'migrations'),
+};
