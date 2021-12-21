@@ -2,6 +2,7 @@ import puppeteer from 'puppeteer';
 
 import { closePageAndBrowser, launchBrowser } from '../utils/puppeteerLauncher';
 import logger from '../logger';
+import makeCert from '../utils/makeCert';
 
 const defaultORRTimeOut = 10000;
 
@@ -22,6 +23,8 @@ async function scrapeORR(year: number) {
         .querySelectorAll<HTMLLinkElement>('#resTable-0 > tbody > tr > td > a')
         .forEach((btn) => {
           if (btn.onclick) {
+            // TODO: Get the id, name and dates fields. Check and compare with existing data (from ES?) , and see if those data changes
+            // Only scrape when something change?
             skuList.push(btn.onclick.toString().split('sku=')[1].split("'")[0]);
           }
         });
@@ -35,7 +38,10 @@ async function scrapeORR(year: number) {
         waitUntil: 'load',
       });
       const certInfo = await page.evaluate(parsePolarInformations);
-      orrFullCerts.push(certInfo);
+      const extras = await page.content();
+      orrFullCerts.push(makeCert({ ...certInfo, extras }));
+      // TODO : Save to ES? Also update if any change
+      // console.log('Added new cert', makeCert({ ...certInfo, extras }));
     }
   } catch (error) {
     logger.error(`Failed to Scrape ORR Certs`, error);
@@ -61,13 +67,13 @@ function parsePolarInformations() {
   const expireDate = 'Unknown';
   const measureDate = document.querySelector('#meas_date')?.textContent;
   const country = 'Unknown'; // maybe they're all usa.
-  const sailNum = document
+  const sailNumber = document
     .querySelector('span#boat_name_sail')
     ?.textContent?.split('   ')[1];
   const className = document.querySelector('#class')?.textContent;
-  const beamFt = document.querySelector('#beam_max')?.textContent;
-  const draftFt = document.querySelector('#draft_mt')?.textContent;
-  const displacementKg = document.querySelector('#disp_mt')?.textContent;
+  const beam = document.querySelector('#beam_max')?.textContent;
+  const draft = document.querySelector('#draft_mt')?.textContent;
+  const displacement = document.querySelector('#disp_mt')?.textContent;
   const hasPolars = true;
   const hasTimeAllowances = true;
   const windSpeeds: number[] = [];
@@ -337,11 +343,11 @@ function parsePolarInformations() {
     expireDate,
     measureDate,
     country,
-    sailNum,
+    sailNumber,
     className,
-    beamFt,
-    draftFt,
-    displacementKg,
+    beam,
+    draft,
+    displacement,
     hasPolars,
     hasTimeAllowances,
     polars,
@@ -353,7 +359,8 @@ const currentDate = new Date();
 const currentYear = currentDate.getFullYear();
 
 (async () => {
-  for (let year = 2020; year <= currentYear; year++) {
+  // TODO: Include year 2020 (Cannot use the same function, has different layout)
+  for (let year = 2021; year <= currentYear; year++) {
     logger.info(`Start scraping ORR year: ${year}`);
     await scrapeORR(year);
     logger.info(`Finished scraping ORR year: ${year}`);

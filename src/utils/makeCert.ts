@@ -4,24 +4,24 @@ export default function makeCert(data: {
   organization: string;
   subOrganization: string;
   certType: string;
-  builder: string;
-  owner: string;
-  certNumber: string;
-  issuedDate: string;
-  expireDate: string;
-  measureDate: string;
-  country: string;
-  sailNumber: string;
-  boatName: string;
-  className: string;
-  beam: string;
-  draft: string;
-  displacement: string;
+  builder: string | null | undefined;
+  owner: string | null | undefined;
+  certNumber: string | null | undefined;
+  issuedDate: string | null | undefined;
+  expireDate: string | null | undefined;
+  measureDate: string | null | undefined;
+  country: string | null | undefined;
+  sailNumber: string | null | undefined;
+  boatName: string | undefined;
+  className: string | null | undefined;
+  beam: string | null | undefined;
+  draft: string | null | undefined;
+  displacement: string | null | undefined;
   extras: string;
   hasPolars: boolean;
-  polars: string;
+  polars: any; // TODO: Type this
   hasTimeAllowances: boolean;
-  timeAllowances: string;
+  timeAllowances: any; // TODO: Type this
 }) {
   const {
     organization,
@@ -54,8 +54,8 @@ export default function makeCert(data: {
     builder,
     owner,
     certNumber,
-    issuedDate,
-    expireDate,
+    issuedDate: issuedDate ? new Date(issuedDate) : null,
+    expireDate: expireDate ? new Date(expireDate) : null,
     measureDate,
     country,
     sailNumber,
