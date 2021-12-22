@@ -18,10 +18,7 @@
     "cheerio": "*",
     "dayjs": "^1.10.7",
     "dotenv": "^10.0.0",
-    "pg": "^8.7.1",
-    "pg-hstore": "^2.3.4",
     "puppeteer": "^13.0.0",
-    "sequelize": "^6.12.0",
     "uuid": "^8.3.2",
     "winston": "^3.3.3"
   },

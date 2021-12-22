@@ -110,7 +110,7 @@ export async function scrapeORRFull(year: number) {
   } catch (error) {
     logger.error(`Failed to Scrape ORR Certs`, error);
   } finally {
-    closePageAndBrowser({ page, browser });
+    await closePageAndBrowser({ page, browser });
   }
   return orrFullCerts;
 }
@@ -211,7 +211,7 @@ export async function scrapeORRez(year: number) {
   } catch (error) {
     logger.error(`Failed to Scrape ORR EZ Certs`, error);
   } finally {
-    closePageAndBrowser({ page, browser });
+    await closePageAndBrowser({ page, browser });
   }
   return orrEZCerts;
 }
