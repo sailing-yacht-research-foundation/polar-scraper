@@ -9,8 +9,7 @@ import { saveCert, searchExistingCert } from '../services/certificateService';
 import { AxiosError } from 'axios';
 
 const defaultORRTimeOut = 10000;
-
-async function scrapeORR(year: number) {
+export async function scrapeORRFull(year: number) {
   const browser = await launchBrowser();
   let page: puppeteer.Page | undefined;
   //  ORR full certs with polars.
@@ -63,12 +62,11 @@ async function scrapeORR(year: number) {
           certNumber,
         });
         if (result.length > 0) {
-          // Skip this cert
           logger.info(
             `Cert: ${certNumber} of ORR Full - ${skuId} exists, skipping`,
           );
-          // TODO: Should we instead of skipping, update the values? Will this changes frequently, or is it impossible to change
           continue;
+          // TODO: Should we instead of skipping, update the values? Will this changes frequently, or is it impossible to change
         }
       } catch (error) {
         logger.error(
@@ -83,7 +81,7 @@ async function scrapeORR(year: number) {
         timeout: defaultORRTimeOut,
         waitUntil: 'load',
       });
-      const certInfo = await page.evaluate(parsePolarInformations);
+      const certInfo = await page.evaluate(parseORRFullPolarInformations);
       const extras = await page.content();
       const certificate = makeCert({
         organization: 'ORR',
@@ -111,7 +109,7 @@ async function scrapeORR(year: number) {
   return orrFullCerts;
 }
 
-function parsePolarInformations() {
+function parseORRFullPolarInformations() {
   const builder = document.querySelector('#builder')?.textContent;
   const owner = document.querySelector('#owner')?.textContent;
   const certNumber = document.querySelector('#cert_id')?.textContent;
@@ -398,15 +396,3 @@ function parsePolarInformations() {
     timeAllowances,
   };
 }
-
-const currentDate = new Date();
-const currentYear = currentDate.getFullYear();
-
-(async () => {
-  // TODO: Include year 2020 (Cannot use the same function, has different layout)
-  for (let year = 2021; year <= currentYear; year++) {
-    logger.info(`Start scraping ORR year: ${year}`);
-    await scrapeORR(year);
-    logger.info(`Finished scraping ORR year: ${year}`);
-  }
-})();
