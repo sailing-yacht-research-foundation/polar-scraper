@@ -1,14 +1,17 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import puppeteer from 'puppeteer';
-
-import { closePageAndBrowser, launchBrowser } from '../utils/puppeteerLauncher';
-import logger from '../logger';
-import makeCert from '../utils/makeCert';
-import { saveCert, searchExistingCert } from '../services/certificateService';
 import { AxiosError } from 'axios';
 
+import logger from '../logger';
+import makeCert from '../utils/makeCert';
+import { closePageAndBrowser, launchBrowser } from '../utils/puppeteerLauncher';
+import { saveCert, searchExistingCert } from '../services/certificateService';
+
+import { certificationTypes, organizations } from '../enum';
+
 const defaultORRTimeOut = 10000;
+
 export async function scrapeORRFull(year: number) {
   const browser = await launchBrowser();
   let page: puppeteer.Page | undefined;
@@ -57,8 +60,8 @@ export async function scrapeORRFull(year: number) {
       } = orrCertRecords[i];
       try {
         const result = await searchExistingCert({
-          organization: 'ORR',
-          certType: 'ORR Full',
+          organization: organizations.orr,
+          certType: certificationTypes.orrFull,
           certNumber,
         });
         if (result.length > 0) {
@@ -84,9 +87,9 @@ export async function scrapeORRFull(year: number) {
       const certInfo = await page.evaluate(parseORRFullPolarInformations);
       const extras = await page.content();
       const certificate = makeCert({
-        organization: 'ORR',
+        organization: organizations.orr,
+        certType: certificationTypes.orrFull,
         subOrganization: 'None',
-        certType: 'ORR Full',
         boatName,
         issuedDate: effectiveDate,
         expireDate,
