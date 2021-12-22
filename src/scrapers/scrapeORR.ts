@@ -5,7 +5,8 @@ import puppeteer from 'puppeteer';
 import { closePageAndBrowser, launchBrowser } from '../utils/puppeteerLauncher';
 import logger from '../logger';
 import makeCert from '../utils/makeCert';
-import { saveCert } from '../services/certificateService';
+import { saveCert, searchExistingCert } from '../services/certificateService';
+import { AxiosError } from 'axios';
 
 const defaultORRTimeOut = 10000;
 
@@ -30,12 +31,14 @@ async function scrapeORR(year: number) {
             ?.toString()
             .split('sku=')[1]
             .split("'")[0];
+          const certNumber = linkBtn?.innerHTML;
           const effectiveDate = columns[1].innerHTML;
           const expireDate = columns[2].innerHTML;
           const yacht = columns[3].innerHTML;
           const boatType = columns[4].innerHTML;
           return {
             skuId,
+            certNumber,
             effectiveDate,
             expireDate,
             yacht,
@@ -51,7 +54,30 @@ async function scrapeORR(year: number) {
         yacht: boatName,
         effectiveDate,
         expireDate,
+        certNumber,
       } = orrCertRecords[i];
+      try {
+        const result = await searchExistingCert({
+          organization: 'ORR',
+          certType: 'ORR Full',
+          certNumber,
+        });
+        if (result.length > 0) {
+          // Skip this cert
+          logger.info(
+            `Cert: ${certNumber} of ORR Full - ${skuId} exists, skipping`,
+          );
+          // TODO: Should we instead of skipping, update the values? Will this changes frequently, or is it impossible to change
+          continue;
+        }
+      } catch (error) {
+        logger.error(
+          `Checking cert exists failed:`,
+          (error as AxiosError).response?.data,
+        );
+        continue;
+      }
+
       let orrUrl = `https://www.regattaman.com/cert_form.php?sku=${skuId}&rnum=0&sort=undefined&ssort=undefined&sdir=true&ssdir=true`;
       await page.goto(orrUrl, {
         timeout: defaultORRTimeOut,
@@ -60,6 +86,9 @@ async function scrapeORR(year: number) {
       const certInfo = await page.evaluate(parsePolarInformations);
       const extras = await page.content();
       const certificate = makeCert({
+        organization: 'ORR',
+        subOrganization: 'None',
+        certType: 'ORR Full',
         boatName,
         issuedDate: effectiveDate,
         expireDate,
@@ -83,10 +112,6 @@ async function scrapeORR(year: number) {
 }
 
 function parsePolarInformations() {
-  const organization = 'ORR';
-  const subOrganization = 'None';
-  const certType = 'ORR Full';
-
   const builder = document.querySelector('#builder')?.textContent;
   const owner = document.querySelector('#owner')?.textContent;
   const certNumber = document.querySelector('#cert_id')?.textContent;
@@ -357,9 +382,6 @@ function parsePolarInformations() {
   };
 
   return {
-    organization,
-    subOrganization,
-    certType,
     builder,
     owner,
     certNumber,

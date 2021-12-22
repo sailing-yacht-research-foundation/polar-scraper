@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ElasticSearchQueryResult } from '../types/GeneralType';
 
 const basicAuth = Buffer.from(
   `${process.env.ELASTIC_SEARCH_USERNAME}:${process.env.ELASTIC_SEARCH_PASSWORD}`,
@@ -11,7 +12,10 @@ let api = axios.create({
   },
 });
 
-const query = async (urlPath = '', query: any) => {
+const query = async (
+  urlPath = '',
+  query: any,
+): Promise<ElasticSearchQueryResult<any>> => {
   return await api.post(urlPath, query);
 };
 
