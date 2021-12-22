@@ -14,9 +14,9 @@ export default function makeCert(data: {
   sailNumber: string | null | undefined;
   boatName: string | undefined;
   className: string | null | undefined;
-  beam: string | null | undefined;
-  draft: string | null | undefined;
-  displacement: string | null | undefined;
+  beam: number;
+  draft: number;
+  displacement: number;
   extras: string;
   hasPolars: boolean;
   polars: any; // TODO: Type this
@@ -56,7 +56,7 @@ export default function makeCert(data: {
     certNumber,
     issuedDate: issuedDate ? new Date(issuedDate) : null,
     expireDate: expireDate ? new Date(expireDate) : null,
-    measureDate,
+    measureDate: measureDate ? new Date(measureDate) : null,
     country,
     sailNumber,
     boatName,

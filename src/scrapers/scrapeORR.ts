@@ -1,8 +1,11 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import puppeteer from 'puppeteer';
 
 import { closePageAndBrowser, launchBrowser } from '../utils/puppeteerLauncher';
 import logger from '../logger';
 import makeCert from '../utils/makeCert';
+import { saveCert } from '../services/certificateService';
 
 const defaultORRTimeOut = 10000;
 
@@ -17,31 +20,59 @@ async function scrapeORR(year: number) {
     page = await browser.newPage();
     await page.goto(url, { timeout: defaultORRTimeOut, waitUntil: 'load' });
 
-    const orrCertIds = await page.evaluate(() => {
-      const skuList: string[] = [];
-      document
-        .querySelectorAll<HTMLLinkElement>('#resTable-0 > tbody > tr > td > a')
-        .forEach((btn) => {
-          if (btn.onclick) {
-            // TODO: Get the id, name and dates fields. Check and compare with existing data (from ES?) , and see if those data changes
-            // Only scrape when something change?
-            skuList.push(btn.onclick.toString().split('sku=')[1].split("'")[0]);
-          }
+    const orrCertRecords = await page.$$eval(
+      '#resTable-0 > tbody > tr',
+      (rows) => {
+        return Array.from(rows, (row) => {
+          const columns = row.querySelectorAll('td');
+          const linkBtn = columns[0].querySelector('a');
+          const skuId = linkBtn?.onclick
+            ?.toString()
+            .split('sku=')[1]
+            .split("'")[0];
+          const effectiveDate = columns[1].innerHTML;
+          const expireDate = columns[2].innerHTML;
+          const yacht = columns[3].innerHTML;
+          const boatType = columns[4].innerHTML;
+          return {
+            skuId,
+            effectiveDate,
+            expireDate,
+            yacht,
+            boatType,
+          };
         });
-      return skuList;
-    });
+      },
+    );
 
-    for (let i = 0; i < orrCertIds.length; i++) {
-      let orrUrl = `https://www.regattaman.com/cert_form.php?sku=${orrCertIds[i]}&rnum=0&sort=undefined&ssort=undefined&sdir=true&ssdir=true`;
+    for (let i = 0; i < orrCertRecords.length; i++) {
+      const {
+        skuId,
+        yacht: boatName,
+        effectiveDate,
+        expireDate,
+      } = orrCertRecords[i];
+      let orrUrl = `https://www.regattaman.com/cert_form.php?sku=${skuId}&rnum=0&sort=undefined&ssort=undefined&sdir=true&ssdir=true`;
       await page.goto(orrUrl, {
         timeout: defaultORRTimeOut,
         waitUntil: 'load',
       });
       const certInfo = await page.evaluate(parsePolarInformations);
       const extras = await page.content();
-      orrFullCerts.push(makeCert({ ...certInfo, extras }));
-      // TODO : Save to ES? Also update if any change
-      // console.log('Added new cert', makeCert({ ...certInfo, extras }));
+      const certificate = makeCert({
+        boatName,
+        issuedDate: effectiveDate,
+        expireDate,
+        ...certInfo,
+        extras,
+      });
+      orrFullCerts.push(certificate);
+      try {
+        const result = await saveCert(certificate.syrfId, certificate);
+        console.log(result);
+      } catch (error) {
+        logger.error('Failed pushing to ES', error);
+      }
     }
   } catch (error) {
     logger.error(`Failed to Scrape ORR Certs`, error);
@@ -52,9 +83,6 @@ async function scrapeORR(year: number) {
 }
 
 function parsePolarInformations() {
-  const boatName = document
-    .querySelector('span#boat_name_sail')
-    ?.textContent?.split('   ')[0];
   const organization = 'ORR';
   const subOrganization = 'None';
   const certType = 'ORR Full';
@@ -62,18 +90,15 @@ function parsePolarInformations() {
   const builder = document.querySelector('#builder')?.textContent;
   const owner = document.querySelector('#owner')?.textContent;
   const certNumber = document.querySelector('#cert_id')?.textContent;
-  const issuedDate = document.querySelector('#date_eff')?.textContent;
-
-  const expireDate = 'Unknown';
   const measureDate = document.querySelector('#meas_date')?.textContent;
   const country = 'Unknown'; // maybe they're all usa.
   const sailNumber = document
     .querySelector('span#boat_name_sail')
     ?.textContent?.split('   ')[1];
   const className = document.querySelector('#class')?.textContent;
-  const beam = document.querySelector('#beam_max')?.textContent;
-  const draft = document.querySelector('#draft_mt')?.textContent;
-  const displacement = document.querySelector('#disp_mt')?.textContent;
+  const beam = Number(document.querySelector('#beam_max')?.textContent);
+  const draft = Number(document.querySelector('#draft_mt')?.textContent);
+  const displacement = Number(document.querySelector('#disp_mt')?.textContent);
   const hasPolars = true;
   const hasTimeAllowances = true;
   const windSpeeds: number[] = [];
@@ -335,12 +360,9 @@ function parsePolarInformations() {
     organization,
     subOrganization,
     certType,
-    boatName,
     builder,
     owner,
     certNumber,
-    issuedDate,
-    expireDate,
     measureDate,
     country,
     sailNumber,
