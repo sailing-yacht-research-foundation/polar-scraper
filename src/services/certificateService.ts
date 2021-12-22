@@ -5,10 +5,9 @@ const CERT_INDEX = 'vessel-cert';
 export const searchExistingCert = async (searchQuery: {
   organization: string;
   certType: string;
-  certNumber?: string;
   originalId?: string;
 }) => {
-  const { organization, certType, certNumber, originalId } = searchQuery;
+  const { organization, certType, originalId } = searchQuery;
   const queries: any[] = [
     {
       match: {
@@ -21,13 +20,6 @@ export const searchExistingCert = async (searchQuery: {
       },
     },
   ];
-  if (certNumber) {
-    queries.push({
-      match: {
-        certNumber,
-      },
-    });
-  }
   if (originalId) {
     queries.push({
       match: {
@@ -40,17 +32,19 @@ export const searchExistingCert = async (searchQuery: {
     organization: string;
     certType: string;
     certNumber: string;
+    originalId: string;
   }> = await elasticSearchAPI.query(`/${CERT_INDEX}/_search`, {
     query: {
       bool: {
         must: queries,
       },
     },
-    _source: ['syrfId', 'organization', 'certType', 'certNumber'],
+    _source: ['syrfId', 'organization', 'certType', 'certNumber', 'originalId'],
   });
   return esResult.data.hits.hits.map((row) => {
-    const { syrfId, organization, certType, certNumber } = row._source;
-    return { syrfId, organization, certType, certNumber };
+    const { syrfId, organization, certType, certNumber, originalId } =
+      row._source;
+    return { syrfId, organization, certType, certNumber, originalId };
   });
 };
 

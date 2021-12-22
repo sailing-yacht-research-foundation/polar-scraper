@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export default function makeCert(data: {
   organization: string;
-  subOrganization: string;
+  subOrganization: string | null | undefined;
   certType: string;
   builder: string | null | undefined;
   owner: string | null | undefined;
@@ -19,9 +19,10 @@ export default function makeCert(data: {
   displacement: number;
   extras: string;
   hasPolars: boolean;
-  polars: any; // TODO: Type this
+  polars?: any; // TODO: Type this
   hasTimeAllowances: boolean;
-  timeAllowances: any; // TODO: Type this
+  timeAllowances?: any; // TODO: Type this
+  originalId: string;
 }) {
   const {
     organization,
@@ -45,6 +46,7 @@ export default function makeCert(data: {
     polars,
     hasTimeAllowances,
     timeAllowances,
+    originalId,
   } = data;
   return {
     syrfId: uuidv4(),
@@ -69,5 +71,6 @@ export default function makeCert(data: {
     polars,
     hasTimeAllowances,
     timeAllowances,
+    originalId,
   };
 }

@@ -5,6 +5,7 @@ const organizations = {
 
 const certificationTypes = {
   orrFull: 'ORR Full',
+  orrEZ: 'ORR-EZ',
 };
 
 export { organizations, certificationTypes };

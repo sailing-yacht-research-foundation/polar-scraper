@@ -58,11 +58,12 @@ export async function scrapeORRFull(year: number) {
         expireDate,
         certNumber,
       } = orrCertRecords[i];
+      const originalId = String(skuId).replace(/-/g, '_');
       try {
         const result = await searchExistingCert({
           organization: organizations.orr,
           certType: certificationTypes.orrFull,
-          certNumber,
+          originalId,
         });
         if (result.length > 0) {
           logger.info(
@@ -89,17 +90,19 @@ export async function scrapeORRFull(year: number) {
       const certificate = makeCert({
         organization: organizations.orr,
         certType: certificationTypes.orrFull,
-        subOrganization: 'None',
         boatName,
         issuedDate: effectiveDate,
         expireDate,
         ...certInfo,
         extras,
+        originalId,
       });
       orrFullCerts.push(certificate);
       try {
         const result = await saveCert(certificate.syrfId, certificate);
-        console.log(result);
+        logger.info(
+          `New cert saved: id: ${result._id}, originalId: ${originalId}`,
+        );
       } catch (error) {
         logger.error('Failed pushing to ES', error);
       }
@@ -110,6 +113,107 @@ export async function scrapeORRFull(year: number) {
     closePageAndBrowser({ page, browser });
   }
   return orrFullCerts;
+}
+
+export async function scrapeORRez(year: number) {
+  const browser = await launchBrowser();
+  let page: puppeteer.Page | undefined;
+
+  const orrEZCerts: any[] = [];
+  const url = `https://www.regattaman.com/cert_list.php?yr=${year}&lType=all&org=327&goback=%2Fcertificate_page.php%3Fcp_tab%3D0&ctyp=ORR-Ez%2CORR-Ez-SH%20Request%20Method:%20GET`;
+  try {
+    page = await browser.newPage();
+    await page.goto(url, { timeout: defaultORRTimeOut, waitUntil: 'load' });
+
+    const orrCertRecords = await page.$$eval(
+      '#resTable-0 > tbody > tr',
+      (rows) => {
+        return Array.from(rows, (row) => {
+          const columns = row.querySelectorAll('td');
+          const linkBtn = columns[0].querySelector('a');
+          const skuId = linkBtn?.onclick
+            ?.toString()
+            .split('sku=')[1]
+            .split("'")[0];
+          const certNumber = linkBtn?.innerHTML;
+          const effectiveDate = columns[1].innerHTML;
+          const expireDate = columns[2].innerHTML;
+          const yacht = columns[3].innerHTML;
+          const boatType = columns[4].innerHTML;
+          return {
+            skuId,
+            certNumber,
+            effectiveDate,
+            expireDate,
+            yacht,
+            boatType,
+          };
+        });
+      },
+    );
+
+    for (let i = 0; i < orrCertRecords.length; i++) {
+      const {
+        skuId,
+        yacht: boatName,
+        effectiveDate,
+        expireDate,
+        certNumber,
+      } = orrCertRecords[i];
+      const originalId = String(skuId).replace(/-/g, '_');
+      try {
+        const result = await searchExistingCert({
+          organization: organizations.orr,
+          certType: certificationTypes.orrEZ,
+          originalId,
+        });
+        if (result.length > 0) {
+          logger.info(
+            `Cert: ${certNumber} of ORR EZ - ${skuId} exists, skipping`,
+          );
+          continue;
+        }
+      } catch (error) {
+        logger.error(
+          `Checking cert exists failed:`,
+          (error as AxiosError).response?.data,
+        );
+        continue;
+      }
+
+      let ezUrl = `https://www.regattaman.com/cert_form.php?sku=${skuId}&rnum=0`;
+      await page.goto(ezUrl, {
+        timeout: defaultORRTimeOut,
+        waitUntil: 'load',
+      });
+      const certInfo = await page.evaluate(parseORREZInformations);
+      const extras = await page.content();
+      const certificate = makeCert({
+        organization: organizations.orr,
+        certType: certificationTypes.orrEZ,
+        boatName,
+        issuedDate: effectiveDate,
+        expireDate,
+        ...certInfo,
+        extras,
+        originalId,
+      });
+      orrEZCerts.push(certificate);
+      try {
+        const result = await saveCert(certificate.syrfId, certificate);
+        logger.info(
+          `New cert saved: id: ${result._id}, originalId: ${originalId}`,
+        );
+      } catch (error) {
+        logger.error('Failed pushing to ES', error);
+      }
+    }
+  } catch (error) {
+    logger.error(`Failed to Scrape ORR EZ Certs`, error);
+  } finally {
+    closePageAndBrowser({ page, browser });
+  }
+  return orrEZCerts;
 }
 
 function parseORRFullPolarInformations() {
@@ -383,6 +487,7 @@ function parseORRFullPolarInformations() {
   };
 
   return {
+    subOrganization: 'NONE',
     builder,
     owner,
     certNumber,
@@ -397,5 +502,35 @@ function parseORRFullPolarInformations() {
     hasTimeAllowances,
     polars,
     timeAllowances,
+  };
+}
+
+function parseORREZInformations() {
+  const subOrganization = document.querySelector('#cert_group')?.textContent;
+  const builder = document.querySelector('#builder')?.textContent;
+  const owner = document.querySelector('#owner')?.textContent;
+  const certNumber = document.querySelector('#cert_id')?.textContent;
+  const measureDate = 'Unknown';
+  const country = 'Unknown'; // maybe they're all usa.
+  const sailNumber = document.querySelector('#sail_id')?.textContent;
+  const className = document.querySelector('#boat_type')?.textContent;
+  const beam = Number(document.querySelector('#beam_max')?.textContent);
+  const draft = Number(document.querySelector('#draft_mt')?.textContent);
+  const displacement = Number(document.querySelector('#disp_mt')?.textContent);
+
+  return {
+    subOrganization,
+    builder,
+    owner,
+    certNumber,
+    measureDate,
+    country,
+    sailNumber,
+    className,
+    beam,
+    draft,
+    displacement,
+    hasPolars: false,
+    hasTimeAllowances: false,
   };
 }

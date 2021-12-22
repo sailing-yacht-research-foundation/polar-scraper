@@ -1,5 +1,5 @@
 import logger from './logger';
-import { scrapeORRFull } from './scrapers/orr';
+import { scrapeORRez, scrapeORRFull } from './scrapers/orr';
 
 const currentDate = new Date();
 const currentYear = currentDate.getFullYear();
@@ -11,5 +11,12 @@ const currentYear = currentDate.getFullYear();
     logger.info(`Start scraping ORR Full year: ${year}`);
     await scrapeORRFull(year);
     logger.info(`Finished scraping ORR Full year: ${year}`);
+  }
+
+  // 2. Scrape ORR EZ certs
+  for (let year = 2021; year <= currentYear; year++) {
+    logger.info(`Start scraping ORR EZ year: ${year}`);
+    await scrapeORRez(year);
+    logger.info(`Finished scraping ORR EZ year: ${year}`);
   }
 })();
