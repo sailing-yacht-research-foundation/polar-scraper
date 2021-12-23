@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer';
 
 export async function launchBrowser() {
   return await puppeteer.launch({
-    // headless: false, // open this for testing with ui shown
+    headless: false, // open this for testing with ui shown
     ignoreHTTPSErrors: true,
     args: [
       '--no-sandbox',

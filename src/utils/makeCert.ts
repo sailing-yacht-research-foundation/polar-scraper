@@ -14,9 +14,9 @@ export default function makeCert(data: {
   sailNumber: string | null | undefined;
   boatName: string | undefined;
   className: string | null | undefined;
-  beam: number;
-  draft: number;
-  displacement: number;
+  beam: number | undefined;
+  draft: number | undefined;
+  displacement: number | undefined;
   extras: string;
   hasPolars: boolean;
   polars?: any; // TODO: Type this
