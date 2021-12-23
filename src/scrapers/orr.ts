@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
 dotenv.config();
-import puppeteer from 'puppeteer';
 import { AxiosError } from 'axios';
 
 import logger from '../logger';
@@ -14,72 +13,78 @@ const defaultORRTimeOut = 10000;
 
 export async function scrapeORRFull(year: number) {
   const browser = await launchBrowser();
-  let page: puppeteer.Page | undefined;
+  let page = await browser.newPage();
   //  ORR full certs with polars.
 
-  const orrFullCerts = [];
   const url = `https://www.regattaman.com/cert_list.php?yr=${year}&lType=all&org=327&goback=%2Fcertificate_page.php%3Fcp_tab&ctyp=ORR&rnum=0&sort=0&ssort=0&sdir=true&ssdir=true`;
+  let orrCertRecords: {
+    skuId: string | undefined;
+    certNumber: string | undefined;
+    effectiveDate: string;
+    expireDate: string;
+    yacht: string;
+    boatType: string;
+  }[] = [];
   try {
-    page = await browser.newPage();
     await page.goto(url, { timeout: defaultORRTimeOut, waitUntil: 'load' });
 
-    const orrCertRecords = await page.$$eval(
-      '#resTable-0 > tbody > tr',
-      (rows) => {
-        return Array.from(rows, (row) => {
-          const columns = row.querySelectorAll('td');
-          const linkBtn = columns[0].querySelector('a');
-          const skuId = linkBtn?.onclick
-            ?.toString()
-            .split('sku=')[1]
-            .split("'")[0];
-          const certNumber = linkBtn?.innerHTML;
-          const effectiveDate = columns[1].innerHTML;
-          const expireDate = columns[2].innerHTML;
-          const yacht = columns[3].innerHTML;
-          const boatType = columns[4].innerHTML;
-          return {
-            skuId,
-            certNumber,
-            effectiveDate,
-            expireDate,
-            yacht,
-            boatType,
-          };
-        });
-      },
-    );
-
-    for (let i = 0; i < orrCertRecords.length; i++) {
-      const {
-        skuId,
-        yacht: boatName,
-        effectiveDate,
-        expireDate,
-        certNumber,
-      } = orrCertRecords[i];
-      const originalId = String(skuId).replace(/-/g, '_');
-      try {
-        const result = await searchExistingCert({
-          organization: organizations.orr,
-          certType: certificationTypes.orrFull,
-          originalId,
-        });
-        if (result.length > 0) {
-          logger.info(
-            `Cert: ${certNumber} of ORR Full - ${skuId} exists, skipping`,
-          );
-          continue;
-          // TODO: Should we instead of skipping, update the values? Will this changes frequently, or is it impossible to change
-        }
-      } catch (error) {
-        logger.error(
-          `Checking cert exists failed:`,
-          (error as AxiosError).response?.data,
+    orrCertRecords = await page.$$eval('#resTable-0 > tbody > tr', (rows) => {
+      return Array.from(rows, (row) => {
+        const columns = row.querySelectorAll('td');
+        const linkBtn = columns[0].querySelector('a');
+        const skuId = linkBtn?.onclick
+          ?.toString()
+          .split('sku=')[1]
+          .split("'")[0];
+        const certNumber = linkBtn?.innerHTML;
+        const effectiveDate = columns[1].innerHTML;
+        const expireDate = columns[2].innerHTML;
+        const yacht = columns[3].innerHTML;
+        const boatType = columns[4].innerHTML;
+        return {
+          skuId,
+          certNumber,
+          effectiveDate,
+          expireDate,
+          yacht,
+          boatType,
+        };
+      });
+    });
+  } catch (error) {
+    logger.error(`Failed to Scrape ORR Certs`, error);
+  }
+  for (let i = 0; i < orrCertRecords.length; i++) {
+    const {
+      skuId,
+      yacht: boatName,
+      effectiveDate,
+      expireDate,
+      certNumber,
+    } = orrCertRecords[i];
+    const originalId = String(skuId).replace(/-/g, '_');
+    try {
+      const result = await searchExistingCert({
+        organization: organizations.orr,
+        certType: certificationTypes.orrFull,
+        originalId,
+      });
+      if (result.length > 0) {
+        logger.info(
+          `Cert: ${certNumber} of ORR Full - ${skuId} exists, skipping`,
         );
         continue;
+        // TODO: Should we instead of skipping, update the values? Will this changes frequently, or is it impossible to change
       }
+    } catch (error) {
+      logger.error(
+        `Checking cert exists failed:`,
+        (error as AxiosError).response?.data,
+      );
+      continue;
+    }
 
+    try {
       let orrUrl = `https://www.regattaman.com/cert_form.php?sku=${skuId}&rnum=0&sort=undefined&ssort=undefined&sdir=true&ssdir=true`;
       await page.goto(orrUrl, {
         timeout: defaultORRTimeOut,
@@ -97,90 +102,91 @@ export async function scrapeORRFull(year: number) {
         extras,
         originalId,
       });
-      orrFullCerts.push(certificate);
-      try {
-        const result = await saveCert(certificate.syrfId, certificate);
-        logger.info(
-          `New cert saved: id: ${result._id}, originalId: ${originalId}`,
-        );
-      } catch (error) {
-        logger.error('Failed pushing to ES', error);
-      }
+      const result = await saveCert(certificate.syrfId, certificate);
+      logger.info(
+        `New cert saved: id: ${result._id}, originalId: ${originalId}`,
+      );
+    } catch (error) {
+      logger.error('Failed scraping cert or pushing to ES', error);
     }
-  } catch (error) {
-    logger.error(`Failed to Scrape ORR Certs`, error);
-  } finally {
-    await closePageAndBrowser({ page, browser });
   }
-  return orrFullCerts;
+
+  await closePageAndBrowser({ page, browser });
+  return;
 }
 
 export async function scrapeORRez(year: number) {
   const browser = await launchBrowser();
-  let page: puppeteer.Page | undefined;
+  let page = await browser.newPage();
 
-  const orrEZCerts: any[] = [];
   const url = `https://www.regattaman.com/cert_list.php?yr=${year}&lType=all&org=327&goback=%2Fcertificate_page.php%3Fcp_tab%3D0&ctyp=ORR-Ez%2CORR-Ez-SH%20Request%20Method:%20GET`;
+  let orrCertRecords: {
+    skuId: string | undefined;
+    certNumber: string | undefined;
+    effectiveDate: string;
+    expireDate: string;
+    yacht: string;
+    boatType: string;
+  }[] = [];
   try {
-    page = await browser.newPage();
     await page.goto(url, { timeout: defaultORRTimeOut, waitUntil: 'load' });
 
-    const orrCertRecords = await page.$$eval(
-      '#resTable-0 > tbody > tr',
-      (rows) => {
-        return Array.from(rows, (row) => {
-          const columns = row.querySelectorAll('td');
-          const linkBtn = columns[0].querySelector('a');
-          const skuId = linkBtn?.onclick
-            ?.toString()
-            .split('sku=')[1]
-            .split("'")[0];
-          const certNumber = linkBtn?.innerHTML;
-          const effectiveDate = columns[1].innerHTML;
-          const expireDate = columns[2].innerHTML;
-          const yacht = columns[3].innerHTML;
-          const boatType = columns[4].innerHTML;
-          return {
-            skuId,
-            certNumber,
-            effectiveDate,
-            expireDate,
-            yacht,
-            boatType,
-          };
-        });
-      },
-    );
-
-    for (let i = 0; i < orrCertRecords.length; i++) {
-      const {
-        skuId,
-        yacht: boatName,
-        effectiveDate,
-        expireDate,
-        certNumber,
-      } = orrCertRecords[i];
-      const originalId = String(skuId).replace(/-/g, '_');
-      try {
-        const result = await searchExistingCert({
-          organization: organizations.orr,
-          certType: certificationTypes.orrEZ,
-          originalId,
-        });
-        if (result.length > 0) {
-          logger.info(
-            `Cert: ${certNumber} of ORR EZ - ${skuId} exists, skipping`,
-          );
-          continue;
-        }
-      } catch (error) {
-        logger.error(
-          `Checking cert exists failed:`,
-          (error as AxiosError).response?.data,
+    orrCertRecords = await page.$$eval('#resTable-0 > tbody > tr', (rows) => {
+      return Array.from(rows, (row) => {
+        const columns = row.querySelectorAll('td');
+        const linkBtn = columns[0].querySelector('a');
+        const skuId = linkBtn?.onclick
+          ?.toString()
+          .split('sku=')[1]
+          .split("'")[0];
+        const certNumber = linkBtn?.innerHTML;
+        const effectiveDate = columns[1].innerHTML;
+        const expireDate = columns[2].innerHTML;
+        const yacht = columns[3].innerHTML;
+        const boatType = columns[4].innerHTML;
+        return {
+          skuId,
+          certNumber,
+          effectiveDate,
+          expireDate,
+          yacht,
+          boatType,
+        };
+      });
+    });
+  } catch (error) {
+    logger.error(`Failed to Scrape ORR EZ Certs`, error);
+  }
+  for (let i = 0; i < orrCertRecords.length; i++) {
+    const {
+      skuId,
+      yacht: boatName,
+      effectiveDate,
+      expireDate,
+      certNumber,
+    } = orrCertRecords[i];
+    const originalId = String(skuId).replace(/-/g, '_');
+    try {
+      const result = await searchExistingCert({
+        organization: organizations.orr,
+        certType: certificationTypes.orrEZ,
+        originalId,
+      });
+      if (result.length > 0) {
+        logger.info(
+          `Cert: ${certNumber} of ORR EZ - ${skuId} exists, skipping`,
         );
         continue;
       }
+    } catch (error) {
+      logger.error(
+        `Checking cert exists failed:`,
+        (error as AxiosError).response?.data,
+      );
+      continue;
+    }
 
+    try {
       let ezUrl = `https://www.regattaman.com/cert_form.php?sku=${skuId}&rnum=0`;
       await page.goto(ezUrl, {
         timeout: defaultORRTimeOut,
@@ -198,31 +204,25 @@ export async function scrapeORRez(year: number) {
         extras,
         originalId,
       });
-      orrEZCerts.push(certificate);
-      try {
-        const result = await saveCert(certificate.syrfId, certificate);
-        logger.info(
-          `New cert saved: id: ${result._id}, originalId: ${originalId}`,
-        );
-      } catch (error) {
-        logger.error('Failed pushing to ES', error);
-      }
+      const result = await saveCert(certificate.syrfId, certificate);
+      logger.info(
+        `New cert saved: id: ${result._id}, originalId: ${originalId}`,
+      );
+    } catch (error) {
+      logger.error('Failed scraping cert or pushing to ES', error);
     }
-  } catch (error) {
-    logger.error(`Failed to Scrape ORR EZ Certs`, error);
-  } finally {
-    await closePageAndBrowser({ page, browser });
   }
-  return orrEZCerts;
+
+  await closePageAndBrowser({ page, browser });
+  return;
 }
 
 export async function scrapeORROneDesign() {
   const browser = await launchBrowser();
-  let page: puppeteer.Page | undefined;
+  let page = await browser.newPage();
 
   const url = 'https://www.regattaman.com/certificate_page.php';
   let oneDesignUrls: string[] = [];
-  page = await browser.newPage();
   try {
     await page.goto(url, { timeout: defaultORRTimeOut, waitUntil: 'load' });
 
@@ -286,7 +286,6 @@ export async function scrapeORROneDesign() {
   }
 
   await closePageAndBrowser({ page, browser });
-
   return;
 }
 
