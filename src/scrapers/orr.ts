@@ -216,6 +216,80 @@ export async function scrapeORRez(year: number) {
   return orrEZCerts;
 }
 
+export async function scrapeORROneDesign() {
+  const browser = await launchBrowser();
+  let page: puppeteer.Page | undefined;
+
+  const orrOneDesignCerts: any[] = [];
+  const url = 'https://www.regattaman.com/certificate_page.php';
+  try {
+    page = await browser.newPage();
+    await page.goto(url, { timeout: defaultORRTimeOut, waitUntil: 'load' });
+
+    const oneDesignUrls = await page.evaluate(() => {
+      const urls: string[] = [];
+      document
+        .querySelectorAll<HTMLAnchorElement>(
+          '#odcert > tbody > tr > td > span > a',
+        )
+        .forEach((c) => {
+          urls.push(c.href);
+        });
+      return urls;
+    });
+
+    for (let i = 0; i < oneDesignUrls.length; i++) {
+      const skuId = oneDesignUrls[i].toString().split('sku=')[1];
+      const originalId = String(skuId).replace(/-/g, '_');
+      try {
+        const result = await searchExistingCert({
+          organization: organizations.orr,
+          certType: certificationTypes.orrOD,
+          originalId,
+        });
+        if (result.length > 0) {
+          logger.info(`Cert: ORR EZ One Design - ${skuId} exists, skipping`);
+          continue;
+        }
+      } catch (error) {
+        logger.error(
+          `Checking cert exists failed:`,
+          (error as AxiosError).response?.data,
+        );
+        continue;
+      }
+
+      await page.goto(oneDesignUrls[i], {
+        timeout: defaultORRTimeOut,
+        waitUntil: 'load',
+      });
+      const certInfo = await page.evaluate(parseORRODInformations);
+      const extras = await page.content();
+      const certificate = makeCert({
+        organization: organizations.orr,
+        certType: certificationTypes.orrOD,
+        ...certInfo,
+        extras,
+        originalId,
+      });
+      orrOneDesignCerts.push(certificate);
+      try {
+        const result = await saveCert(certificate.syrfId, certificate);
+        logger.info(
+          `New cert saved: id: ${result._id}, originalId: ${originalId}`,
+        );
+      } catch (error) {
+        logger.error('Failed pushing to ES', error);
+      }
+    }
+  } catch (error) {
+    logger.error(`Failed to Scrape ORR EZ One Design Certs`, error);
+  } finally {
+    await closePageAndBrowser({ page, browser });
+  }
+  return orrOneDesignCerts;
+}
+
 function parseORRFullPolarInformations() {
   const builder = document.querySelector('#builder')?.textContent;
   const owner = document.querySelector('#owner')?.textContent;
@@ -520,6 +594,41 @@ function parseORREZInformations() {
 
   return {
     subOrganization,
+    builder,
+    owner,
+    certNumber,
+    measureDate,
+    country,
+    sailNumber,
+    className,
+    beam,
+    draft,
+    displacement,
+    hasPolars: false,
+    hasTimeAllowances: false,
+  };
+}
+
+function parseORRODInformations() {
+  const boatName = document.querySelector('#boat_name')?.textContent || '';
+  const subOrganization = document.querySelector('#cert_group')?.textContent;
+  const builder = document.querySelector('#builder')?.textContent;
+  const owner = document.querySelector('#owner')?.textContent;
+  const certNumber = document.querySelector('#cert_id')?.textContent;
+  const measureDate = 'Unknown';
+  const country = 'Unknown'; // maybe they're all usa.
+  const sailNumber = document.querySelector('#sail_id')?.textContent;
+  const className = document.querySelector('#boat_type')?.textContent;
+  const beam = Number(document.querySelector('#beam_max')?.textContent);
+  const draft = Number(document.querySelector('#draft_mt')?.textContent);
+  const displacement = Number(document.querySelector('#disp_mt')?.textContent);
+  const issuedDate = document.querySelector('#date_eff')?.textContent;
+  const expireDate = 'Unknown'; // Need to convert issued date into date object and then add a year.
+  return {
+    subOrganization,
+    boatName,
+    issuedDate,
+    expireDate,
     builder,
     owner,
     certNumber,
