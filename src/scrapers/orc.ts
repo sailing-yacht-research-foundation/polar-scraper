@@ -216,11 +216,12 @@ export async function downloadORCCerts(
         runVMGs: runVmgs,
         gybeAngles: cert.Allowances.GybeAngle,
       };
-      let d = new Date(cert.IssueDate);
-      let year = d.getFullYear();
-      let month = d.getMonth();
-      let day = d.getDate();
-      let expiredDate = new Date(year + 1, month, day);
+      const issueDate = new Date(cert.IssueDate);
+      const expiredDate = new Date(
+        issueDate.getFullYear() + 1,
+        issueDate.getMonth(),
+        issueDate.getDate(),
+      );
 
       const orcCert = makeCert({
         organization: organizations.orc,
@@ -231,14 +232,10 @@ export async function downloadORCCerts(
         certNumber: cert.CertNo,
         issuedDate: cert.IssueDate,
         expireDate: expiredDate.toISOString(),
-        measureDate: 'Unknown',
         country: country.name,
         sailNumber: cert.SailNo,
         boatName: cert.YachtName,
         className: cert.Class,
-        beam: undefined,
-        draft: undefined,
-        displacement: undefined,
         extras: JSON.stringify(cert),
         hasPolars: true,
         polars,
