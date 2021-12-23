@@ -220,13 +220,13 @@ export async function scrapeORROneDesign() {
   const browser = await launchBrowser();
   let page: puppeteer.Page | undefined;
 
-  const orrOneDesignCerts: any[] = [];
   const url = 'https://www.regattaman.com/certificate_page.php';
+  let oneDesignUrls: string[] = [];
+  page = await browser.newPage();
   try {
-    page = await browser.newPage();
     await page.goto(url, { timeout: defaultORRTimeOut, waitUntil: 'load' });
 
-    const oneDesignUrls = await page.evaluate(() => {
+    oneDesignUrls = await page.evaluate(() => {
       const urls: string[] = [];
       document
         .querySelectorAll<HTMLAnchorElement>(
@@ -237,28 +237,32 @@ export async function scrapeORROneDesign() {
         });
       return urls;
     });
+  } catch (error) {
+    logger.error(`Failed to Scrape ORR EZ One Design Certs`, error);
+  }
 
-    for (let i = 0; i < oneDesignUrls.length; i++) {
-      const skuId = oneDesignUrls[i].toString().split('sku=')[1];
-      const originalId = String(skuId).replace(/-/g, '_');
-      try {
-        const result = await searchExistingCert({
-          organization: organizations.orr,
-          certType: certificationTypes.orrOD,
-          originalId,
-        });
-        if (result.length > 0) {
-          logger.info(`Cert: ORR EZ One Design - ${skuId} exists, skipping`);
-          continue;
-        }
-      } catch (error) {
-        logger.error(
-          `Checking cert exists failed:`,
-          (error as AxiosError).response?.data,
-        );
+  for (let i = 0; i < oneDesignUrls.length; i++) {
+    const skuId = oneDesignUrls[i].toString().split('sku=')[1];
+    const originalId = String(skuId).replace(/-/g, '_');
+    try {
+      const result = await searchExistingCert({
+        organization: organizations.orr,
+        certType: certificationTypes.orrOD,
+        originalId,
+      });
+      if (result.length > 0) {
+        logger.info(`Cert: ORR EZ One Design - ${skuId} exists, skipping`);
         continue;
       }
+    } catch (error) {
+      logger.error(
+        `Checking cert exists failed:`,
+        (error as AxiosError).response?.data,
+      );
+      continue;
+    }
 
+    try {
       await page.goto(oneDesignUrls[i], {
         timeout: defaultORRTimeOut,
         waitUntil: 'load',
@@ -272,22 +276,18 @@ export async function scrapeORROneDesign() {
         extras,
         originalId,
       });
-      orrOneDesignCerts.push(certificate);
-      try {
-        const result = await saveCert(certificate.syrfId, certificate);
-        logger.info(
-          `New cert saved: id: ${result._id}, originalId: ${originalId}`,
-        );
-      } catch (error) {
-        logger.error('Failed pushing to ES', error);
-      }
+      const result = await saveCert(certificate.syrfId, certificate);
+      logger.info(
+        `New cert saved: id: ${result._id}, originalId: ${originalId}`,
+      );
+    } catch (error) {
+      logger.error('Failed scraping cert or pushing to ES', error);
     }
-  } catch (error) {
-    logger.error(`Failed to Scrape ORR EZ One Design Certs`, error);
-  } finally {
-    await closePageAndBrowser({ page, browser });
   }
-  return orrOneDesignCerts;
+
+  await closePageAndBrowser({ page, browser });
+
+  return;
 }
 
 function parseORRFullPolarInformations() {
