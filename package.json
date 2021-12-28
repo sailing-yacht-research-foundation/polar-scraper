@@ -6,6 +6,12 @@
   "scripts": {
     "scrape:orr": "node build/indexORR.js",
     "scrape:orr-dev": "ts-node src/indexORR.ts",
+    "scrape:orc": "node build/indexORC.js",
+    "scrape:orc-dev": "ts-node src/indexORC.ts",
+    "scrape:irc": "node build/indexIRC.js",
+    "scrape:irc-dev": "ts-node src/indexIRC.ts",
+    "scrape:classic": "node build/indexClassic.js",
+    "scrape:classic-dev": "ts-node src/indexClassic.ts",
     "build": "rm -rf ./build && tsc --project ./",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\" --fix",

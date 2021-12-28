@@ -27,4 +27,3 @@ Run `npm install` to install dependencies
 ## TODOs
 
 - Scrape ORR 2020 and earlier?
-- Scrape ORC
