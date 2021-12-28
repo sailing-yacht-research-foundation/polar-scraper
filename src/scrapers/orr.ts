@@ -471,9 +471,12 @@ function parseORRFullPolarInformations() {
       if (!skippedFirst) {
         skippedFirst = true;
       } else {
-        const beatAngleTA = record.textContent?.replace('kts', '');
+        const beatAngleTA = record.textContent?.replace('°', '');
         if (beatAngleTA !== undefined) {
-          optBeatAnglesTA.push(parseFloat(beatAngleTA));
+          const beatAngleTAFloat = parseFloat(beatAngleTA);
+          if (!isNaN(beatAngleTAFloat)) {
+            optBeatAnglesTA.push(beatAngleTAFloat);
+          }
         }
       }
     });
@@ -490,7 +493,9 @@ function parseORRFullPolarInformations() {
       if (!skippedFirst) {
         skippedFirst = true;
       } else {
-        const beatSpeedTA = record.textContent?.replace('kts', '');
+        const beatSpeedTA = record.textContent
+          ?.replace('kts', '')
+          .replace(/,/g, '');
         if (beatSpeedTA !== undefined) {
           optBeatSpeedsKtsTA.push(parseFloat(beatSpeedTA));
         }
@@ -499,38 +504,41 @@ function parseORRFullPolarInformations() {
 
   const trueWindAnglesTA: { twa: number; speeds: number[] }[] = [];
   currentIndex = 0;
+  let lastTWAIndex = 0;
 
   document
     .querySelectorAll<HTMLTableCellElement>(
       '#polar_time > div > div > table > tbody > tr > td:nth-child(1)',
     )
     .forEach((record) => {
-      if (currentIndex >= 2 && currentIndex <= 11) {
+      let twa: number | undefined;
+      if (record.textContent !== null) {
+        twa = parseFloat(record.textContent.replace('°', ''));
+      }
+      if (twa && !isNaN(twa)) {
         const speeds: number[] = [];
         skippedFirst = false;
+        lastTWAIndex = currentIndex + 1;
 
         document
           .querySelectorAll<HTMLTableCellElement>(
-            `#polar_time > div > div > table > tbody > tr:nth-child(${
-              currentIndex + 1
-            }) > td`,
+            `#polar_time > div > div > table > tbody > tr:nth-child(${lastTWAIndex}) > td`,
           )
           .forEach((innerRecord) => {
             if (!skippedFirst) {
               skippedFirst = true;
             } else {
               if (innerRecord.textContent !== null) {
-                speeds.push(parseFloat(innerRecord.textContent));
+                speeds.push(
+                  parseFloat(innerRecord.textContent.replace(/,/g, '')),
+                );
               }
             }
           });
-
-        if (record.textContent !== null) {
-          trueWindAnglesTA.push({
-            twa: parseFloat(record.textContent.replace('°', '')),
-            speeds: speeds,
-          });
-        }
+        trueWindAnglesTA.push({
+          twa,
+          speeds: speeds,
+        });
       }
       currentIndex++;
     });
@@ -540,14 +548,37 @@ function parseORRFullPolarInformations() {
 
   document
     .querySelectorAll<HTMLTableCellElement>(
-      '#polar_time > div > div > table > tbody > tr:nth-child(13) > td',
+      `#polar_time > div > div > table > tbody > tr:nth-child(${
+        lastTWAIndex + 1
+      }) > td`,
     )
     .forEach((record) => {
       if (!skippedFirst) {
         skippedFirst = true;
       } else {
         if (record.textContent !== null) {
-          optRunSpeedsKtsTA.push(parseFloat(record.textContent));
+          optRunSpeedsKtsTA.push(
+            parseFloat(record.textContent.replace(/,/g, '')),
+          );
+        }
+      }
+    });
+
+  const optRunAnglesTA: number[] = [];
+  skippedFirst = false;
+
+  document
+    .querySelectorAll<HTMLTableCellElement>(
+      `#polar_speed > div > div > table > tbody > tr:nth-child(${
+        lastTWAIndex + 2
+      }) > td`,
+    )
+    .forEach((record) => {
+      if (!skippedFirst) {
+        skippedFirst = true;
+      } else {
+        if (record.textContent !== null) {
+          optRunAngles.push(parseFloat(record.textContent.replace('°', '')));
         }
       }
     });
@@ -557,6 +588,7 @@ function parseORRFullPolarInformations() {
     beatVMGs: optBeatSpeedsKtsTA,
     timeAllowances: trueWindAnglesTA,
     runVMGs: optRunSpeedsKtsTA,
+    gybeAngles: optRunAnglesTA,
   };
 
   return {
