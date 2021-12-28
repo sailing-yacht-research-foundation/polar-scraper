@@ -5,7 +5,9 @@ const currentDate = new Date();
 const currentYear = currentDate.getFullYear();
 
 (async () => {
-  logger.info('Start scraping ORC');
-  await scrapeORC(currentYear);
-  logger.info('Finish scraping ORC');
+  for (let year = 2020; year <= currentYear; year++) {
+    logger.info(`Start scraping ORC  - ${year}`);
+    await scrapeORC(year);
+    logger.info(`Finish scraping ORC - ${year}`);
+  }
 })();

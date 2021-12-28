@@ -26,4 +26,4 @@ Run `npm install` to install dependencies
 
 ## TODOs
 
-- Scrape ORR 2020 and earlier?
+- Scrape ORR Full 2020 and earlier? -> No polar data in the 2020 versions
