@@ -233,7 +233,6 @@ export async function downloadORCCerts(
         organization: organizations.orc,
         certType,
         builder: cert.Builder,
-        owner: undefined,
         certNumber: cert.CertNo,
         issuedDate: cert.IssueDate,
         expireDate: expiredDate.toISOString(),
