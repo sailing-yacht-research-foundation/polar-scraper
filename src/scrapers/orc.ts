@@ -182,29 +182,34 @@ export async function downloadORCCerts(
       }
       const beatVmgs: number[] = [];
       cert.Allowances.Beat.forEach((s) => {
-        beatVmgs.push(s / 3600.0);
+        beatVmgs.push(3600.0 / s);
       });
 
       const runVmgs: number[] = [];
       cert.Allowances.Run.forEach((s) => {
-        runVmgs.push(s / 3600.0);
+        runVmgs.push(3600.0 / s);
       });
 
       const p: {
         twa: number;
         speeds: number[];
       }[] = [];
+      const ta: {
+        twa: number;
+        speeds: number[];
+      }[] = [];
 
       let count = 0;
       Object.keys(cert.Allowances).forEach((k) => {
-        if (count >= 2 && count <= 9) {
-          const angle = parseFloat(k.split('R')[1]);
-
-          const speeds: number[] = [];
+        const angle = parseFloat(k.split('R')[1]);
+        if (!isNaN(angle)) {
+          const speedsKnots: number[] = [];
+          const speedsSecMile: number[] = [];
           cert.Allowances[k as keyof ORCAllowances].forEach((s) => {
-            speeds.push(s / 3600.0);
+            speedsKnots.push(3600.0 / s);
           });
-          p.push({ twa: angle, speeds: speeds });
+          p.push({ twa: angle, speeds: speedsKnots });
+          ta.push({ twa: angle, speeds: speedsSecMile });
         }
         count++;
       });
@@ -240,7 +245,13 @@ export async function downloadORCCerts(
         hasPolars: true,
         polars,
         hasTimeAllowances: true,
-        timeAllowances: cert.Allowances,
+        timeAllowances: {
+          windSpeeds: cert.Allowances.WindSpeeds,
+          beatVMGs: cert.Allowances.Beat,
+          timeAllowances: ta,
+          runVMGs: cert.Allowances.Run,
+          gybeAngles: cert.Allowances.GybeAngle,
+        },
         originalId: cert.RefNo,
       });
       try {
