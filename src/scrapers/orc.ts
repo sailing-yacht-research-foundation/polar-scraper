@@ -264,3 +264,13 @@ export async function downloadORCCerts(
     }
   }
 }
+
+export async function executeORCCertScrape() {
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  for (let year = 2020; year <= currentYear; year++) {
+    logger.info(`Start scraping ORC  - ${year}`);
+    await scrapeORC(year);
+    logger.info(`Finish scraping ORC - ${year}`);
+  }
+}

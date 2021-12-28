@@ -104,3 +104,13 @@ export async function scrapeClassic(year: number) {
   }
   return;
 }
+
+export async function executeClassicCertScrape() {
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  for (let year = currentYear; year >= 2017; year--) {
+    logger.info(`Start scraping Classic year: ${year}`);
+    await scrapeClassic(year);
+    logger.info(`Finished scraping Classic year: ${year}`);
+  }
+}

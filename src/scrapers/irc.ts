@@ -75,3 +75,9 @@ export async function scrapeIRC() {
 
   return;
 }
+
+export async function executeIRCCertScrape() {
+  logger.info('Start scraping IRC');
+  await scrapeIRC();
+  logger.info('Finish scraping IRC');
+}
