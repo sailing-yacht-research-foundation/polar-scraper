@@ -12,44 +12,18 @@ import { saveCert, searchExistingCert } from '../services/certificateService';
 import { organizations } from '../enum';
 import { closePageAndBrowser, launchBrowser } from '../utils/puppeteerLauncher';
 
+import { ClassicCertData } from '../types/ClassicType';
+
 export async function scrapeClassic(year: number) {
   const browser = await launchBrowser();
   let page = await browser.newPage();
 
   const url = `https://secure.headwaytechnology.com/crf.headwaydomain.com/page/validlist/?show=summary&filterby=all&sortby=lname&phyear=${year}&phkeyword=`;
-  let classicCerts: {
-    owner: string;
-    boatName: string;
-    className: string | null;
-    division: string;
-    subDivision: string | null;
-    sailNumber: string | null;
-    nonSpinnaker: number | null;
-    nonSpinnakerTA: number | null;
-    spinnaker: number | null;
-    spinnakerTA: number | null;
-    type: string;
-    recorded: string | null;
-    certId: string;
-  }[] = [];
+  let classicCerts: ClassicCertData[] = [];
   try {
     await page.goto(url);
     classicCerts = await page.evaluate(() => {
-      const certs: {
-        owner: string;
-        boatName: string;
-        className: string | null;
-        division: string;
-        subDivision: string | null;
-        sailNumber: string | null;
-        nonSpinnaker: number | null;
-        nonSpinnakerTA: number | null;
-        spinnaker: number | null;
-        spinnakerTA: number | null;
-        type: string;
-        recorded: string | null;
-        certId: string;
-      }[] = [];
+      const certs: ClassicCertData[] = [];
       document
         .querySelectorAll(
           'body > div > div > div > div > center > div > table > tbody > tr',
@@ -60,24 +34,24 @@ export async function scrapeClassic(year: number) {
             certs.push({
               owner: row.children[0].textContent || '',
               boatName: row.children[1].textContent || '',
-              className: row.children[2].textContent || null,
+              className: row.children[2].textContent || undefined,
               division: row.children[3].textContent || '',
-              subDivision: row.children[4].textContent || null,
-              sailNumber: row.children[5].textContent || null,
+              subDivision: row.children[4].textContent || undefined,
+              sailNumber: row.children[5].textContent || undefined,
               nonSpinnaker: row.children[6].textContent
                 ? parseFloat(row.children[6].textContent)
-                : null,
+                : undefined,
               nonSpinnakerTA: row.children[7].textContent
                 ? parseFloat(row.children[7].textContent)
-                : null,
+                : undefined,
               spinnaker: row.children[8].textContent
                 ? parseFloat(row.children[8].textContent)
-                : null,
+                : undefined,
               spinnakerTA: row.children[9].textContent
                 ? parseFloat(row.children[9].textContent)
-                : null,
+                : undefined,
               type: row.children[10].textContent || '',
-              recorded: row.children[11].textContent || null,
+              recorded: row.children[11].textContent || undefined,
               certId: row.children[12].textContent || '',
             });
           }
@@ -106,9 +80,7 @@ export async function scrapeClassic(year: number) {
     const expiredDate = issuedDate ? issuedDate.add(1, 'year') : undefined;
     const classicCert = makeCert({
       organization: organizations.classic,
-      subOrganization: 'None',
       certType: cert.division,
-      builder: 'Unknown',
       owner: cert.owner,
       certNumber: cert.certId,
       issuedDate: issuedDate?.toISOString(),

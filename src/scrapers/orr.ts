@@ -290,18 +290,30 @@ export async function scrapeORROneDesign() {
 }
 
 function parseORRFullPolarInformations() {
-  const builder = document.querySelector('#builder')?.textContent;
-  const owner = document.querySelector('#owner')?.textContent;
-  const certNumber = document.querySelector('#cert_id')?.textContent;
-  const measureDate = document.querySelector('#meas_date')?.textContent;
+  const builder = document.querySelector('#builder')?.textContent || undefined;
+  const owner = document.querySelector('#owner')?.textContent || undefined;
+  const certNumber =
+    document.querySelector('#cert_id')?.textContent || undefined;
+  const measureDate =
+    document.querySelector('#meas_date')?.textContent || undefined;
   const country = 'Unknown'; // maybe they're all usa.
   const sailNumber = document
     .querySelector('span#boat_name_sail')
     ?.textContent?.split('   ')[1];
-  const className = document.querySelector('#class')?.textContent;
-  const beam = Number(document.querySelector('#beam_max')?.textContent);
-  const draft = Number(document.querySelector('#draft_mt')?.textContent);
-  const displacement = Number(document.querySelector('#disp_mt')?.textContent);
+  const className =
+    document.querySelector('#boat_type')?.textContent || undefined;
+  const beam =
+    document.querySelector('#beam_max')?.textContent != null
+      ? Number(document.querySelector('#beam_max')?.textContent)
+      : undefined;
+  const draft =
+    document.querySelector('#draft_mt')?.textContent != null
+      ? Number(document.querySelector('#draft_mt')?.textContent)
+      : undefined;
+  const displacement =
+    document.querySelector('#disp_mt')?.textContent != null
+      ? Number(document.querySelector('#disp_mt')?.textContent)
+      : undefined;
   const hasPolars = true;
   const hasTimeAllowances = true;
   const windSpeeds: number[] = [];
@@ -598,7 +610,6 @@ function parseORRFullPolarInformations() {
   };
 
   return {
-    subOrganization: 'NONE',
     builder,
     owner,
     certNumber,
@@ -617,24 +628,36 @@ function parseORRFullPolarInformations() {
 }
 
 function parseORREZInformations() {
-  const subOrganization = document.querySelector('#cert_group')?.textContent;
-  const builder = document.querySelector('#builder')?.textContent;
-  const owner = document.querySelector('#owner')?.textContent;
-  const certNumber = document.querySelector('#cert_id')?.textContent;
-  const measureDate = 'Unknown';
+  // Note: To force undefined value instead of null (textContent may return string | null according to puppeteer types)
+  const subOrganization =
+    document.querySelector('#cert_group')?.textContent || undefined;
+  const builder = document.querySelector('#builder')?.textContent || undefined;
+  const owner = document.querySelector('#owner')?.textContent || undefined;
+  const certNumber =
+    document.querySelector('#cert_id')?.textContent || undefined;
   const country = 'Unknown'; // maybe they're all usa.
-  const sailNumber = document.querySelector('#sail_id')?.textContent;
-  const className = document.querySelector('#boat_type')?.textContent;
-  const beam = Number(document.querySelector('#beam_max')?.textContent);
-  const draft = Number(document.querySelector('#draft_mt')?.textContent);
-  const displacement = Number(document.querySelector('#disp_mt')?.textContent);
+  const sailNumber =
+    document.querySelector('#sail_id')?.textContent || undefined;
+  const className =
+    document.querySelector('#boat_type')?.textContent || undefined;
+  const beam =
+    document.querySelector('#beam_max')?.textContent != null
+      ? Number(document.querySelector('#beam_max')?.textContent)
+      : undefined;
+  const draft =
+    document.querySelector('#draft_mt')?.textContent != null
+      ? Number(document.querySelector('#draft_mt')?.textContent)
+      : undefined;
+  const displacement =
+    document.querySelector('#disp_mt')?.textContent != null
+      ? Number(document.querySelector('#disp_mt')?.textContent)
+      : undefined;
 
   return {
     subOrganization,
     builder,
     owner,
     certNumber,
-    measureDate,
     country,
     sailNumber,
     className,
@@ -648,28 +671,40 @@ function parseORREZInformations() {
 
 function parseORRODInformations() {
   const boatName = document.querySelector('#boat_name')?.textContent || '';
-  const subOrganization = document.querySelector('#cert_group')?.textContent;
-  const builder = document.querySelector('#builder')?.textContent;
-  const owner = document.querySelector('#owner')?.textContent;
-  const certNumber = document.querySelector('#cert_id')?.textContent;
-  const measureDate = 'Unknown';
+  const subOrganization =
+    document.querySelector('#cert_group')?.textContent || undefined;
+  const builder = document.querySelector('#builder')?.textContent || undefined;
+  const owner = document.querySelector('#owner')?.textContent || undefined;
+  const certNumber =
+    document.querySelector('#cert_id')?.textContent || undefined;
   const country = 'Unknown'; // maybe they're all usa.
-  const sailNumber = document.querySelector('#sail_id')?.textContent;
-  const className = document.querySelector('#boat_type')?.textContent;
-  const beam = Number(document.querySelector('#beam_max')?.textContent);
-  const draft = Number(document.querySelector('#draft_mt')?.textContent);
-  const displacement = Number(document.querySelector('#disp_mt')?.textContent);
-  const issuedDate = document.querySelector('#date_eff')?.textContent;
-  const expireDate = 'Unknown'; // Need to convert issued date into date object and then add a year.
+  const sailNumber =
+    document.querySelector('#sail_id')?.textContent || undefined;
+  const className =
+    document.querySelector('#boat_type')?.textContent || undefined;
+  const beam =
+    document.querySelector('#beam_max')?.textContent != null
+      ? Number(document.querySelector('#beam_max')?.textContent)
+      : undefined;
+  const draft =
+    document.querySelector('#draft_mt')?.textContent != null
+      ? Number(document.querySelector('#draft_mt')?.textContent)
+      : undefined;
+  const displacement =
+    document.querySelector('#disp_mt')?.textContent != null
+      ? Number(document.querySelector('#disp_mt')?.textContent)
+      : undefined;
+  const issuedDate =
+    document.querySelector('#date_eff')?.textContent || undefined;
+  // const expireDate = 'Unknown'; // Need to convert issued date into date object and then add a year.
   return {
     subOrganization,
     boatName,
     issuedDate,
-    expireDate,
+    // expireDate,
     builder,
     owner,
     certNumber,
-    measureDate,
     country,
     sailNumber,
     className,

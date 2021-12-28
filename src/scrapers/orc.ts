@@ -231,7 +231,6 @@ export async function downloadORCCerts(
 
       const orcCert = makeCert({
         organization: organizations.orc,
-        subOrganization: 'None',
         certType,
         builder: cert.Builder,
         owner: undefined,

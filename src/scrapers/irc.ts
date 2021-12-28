@@ -47,16 +47,12 @@ export async function scrapeIRC() {
 
       const ircCert = makeCert({
         organization: organizations.irc,
-        subOrganization: 'None',
         certType,
-        builder: 'Unknown',
-        owner: 'Unknown',
         certNumber,
         issuedDate: formattedIssuedDate.toISOString(),
         expireDate: expireDate.toISOString(),
         sailNumber,
         boatName,
-        className: 'Unknown',
         beam,
         draft,
         extras: JSON.stringify(extras),
