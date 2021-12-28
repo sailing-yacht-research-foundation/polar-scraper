@@ -3,7 +3,9 @@ dotenv.config();
 import axios from 'axios';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import utc from 'dayjs/plugin/utc';
 dayjs.extend(customParseFormat);
+dayjs.extend(utc);
 
 import logger from '../logger';
 import makeCert from '../utils/makeCert';
@@ -29,12 +31,12 @@ export async function scrapeIRC() {
       const draft = parseFloat(values[13]);
       const certType = values[21];
       const extras = { names: valuesList, values: values };
-      const formattedIssuedDate = dayjs(issuedDate, 'DD/MM/YYYY');
-      const expireDate = dayjs(issuedDate, 'DD/MM/YYYY').add(1, 'year');
+      const formattedIssuedDate = dayjs.utc(issuedDate, 'DD/MM/YYYY');
+      const expireDate = dayjs.utc(issuedDate, 'DD/MM/YYYY').add(1, 'year');
       const originalId = `${certNumber}_${sailNumber}`;
 
       const existingCert = await searchExistingCert({
-        organization: organizations.orc,
+        organization: organizations.irc,
         certType,
         originalId,
       });
