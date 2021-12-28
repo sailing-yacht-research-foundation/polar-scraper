@@ -2,6 +2,7 @@ const organizations = {
   orr: 'ORR',
   orc: 'ORC',
   irc: 'IRC',
+  classic: 'CYOA',
 };
 
 const certificationTypes = {
