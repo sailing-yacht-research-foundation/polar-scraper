@@ -207,6 +207,7 @@ export async function downloadORCCerts(
           const speedsSecMile: number[] = [];
           cert.Allowances[k as keyof ORCAllowances].forEach((s) => {
             speedsKnots.push(3600.0 / s);
+            speedsSecMile.push(s);
           });
           p.push({ twa: angle, speeds: speedsKnots });
           ta.push({ twa: angle, speeds: speedsSecMile });
