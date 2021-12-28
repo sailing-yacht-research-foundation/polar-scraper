@@ -255,7 +255,6 @@ export async function downloadORCCerts(
         originalId: cert.RefNo,
       });
       try {
-        console.log(JSON.stringify(orcCert));
         const result = await saveCert(orcCert.syrfId, orcCert);
         logger.info(
           `New cert saved: id: ${result._id}, originalId: ${cert.RefNo}`,

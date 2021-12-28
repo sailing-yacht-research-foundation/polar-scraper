@@ -10,8 +10,8 @@ export default function makeCert(data: {
   issuedDate?: string | null;
   expireDate?: string | null;
   measureDate?: string | null;
-  country: string | null | undefined;
-  sailNumber: string | null | undefined;
+  country?: string | null;
+  sailNumber?: string | null;
   boatName: string | undefined;
   className: string | null | undefined;
   beam?: number;
