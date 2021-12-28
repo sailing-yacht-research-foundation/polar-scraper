@@ -2,7 +2,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 import axios, { AxiosError } from 'axios';
 
-const CERT_INDEX = 'vessel-cert';
+import { certIndexName } from '../src/enum';
+
 const basicAuth = Buffer.from(
   `${process.env.ELASTIC_SEARCH_USERNAME}:${process.env.ELASTIC_SEARCH_PASSWORD}`,
 ).toString('base64');
@@ -21,7 +22,7 @@ let api = axios.create({
 // By forcing these mapping, it will not trigger any map changes on insertions
 (async () => {
   try {
-    await api.put(`${CERT_INDEX}`, {
+    await api.put(`${certIndexName}`, {
       settings: { number_of_shards: 1, number_of_replicas: 0 },
     });
   } catch (error) {
@@ -31,7 +32,7 @@ let api = axios.create({
     );
   }
   try {
-    const result = await api.put(`${CERT_INDEX}/_mapping`, {
+    const result = await api.put(`${certIndexName}/_mapping`, {
       properties: {
         'polars.windSpeeds': { type: 'double' },
         'polars.beatAngles': { type: 'double' },
@@ -46,7 +47,7 @@ let api = axios.create({
         'timeAllowances.gybeAngles': { type: 'double' },
       },
     });
-    console.log(`${CERT_INDEX} mapped: ${JSON.stringify(result.data)}`);
+    console.log(`${certIndexName} mapped: ${JSON.stringify(result.data)}`);
   } catch (error) {
     console.log('Error setting mapper: ', (error as AxiosError).response?.data);
   }

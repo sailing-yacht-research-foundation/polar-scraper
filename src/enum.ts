@@ -1,3 +1,5 @@
+const certIndexName = 'vessel-cert';
+
 const organizations = {
   orr: 'ORR',
   orc: 'ORC',
@@ -11,4 +13,4 @@ const certificationTypes = {
   orrOD: 'ORR-EZ One Design',
 };
 
-export { organizations, certificationTypes };
+export { certIndexName, organizations, certificationTypes };

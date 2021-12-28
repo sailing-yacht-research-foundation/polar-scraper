@@ -1,6 +1,7 @@
-import { ElasticSearchQueryResult } from '../types/GeneralType';
 import elasticSearchAPI from './elasticSearchAPI';
-const CERT_INDEX = 'vessel-cert';
+import { certIndexName } from '../enum';
+
+import { ElasticSearchQueryResult } from '../types/GeneralType';
 
 export const searchExistingCert = async (searchQuery: {
   organization: string;
@@ -33,7 +34,7 @@ export const searchExistingCert = async (searchQuery: {
     certType: string;
     certNumber: string;
     originalId: string;
-  }> = await elasticSearchAPI.query(`/${CERT_INDEX}/_search`, {
+  }> = await elasticSearchAPI.query(`/${certIndexName}/_search`, {
     query: {
       bool: {
         must: queries,
@@ -49,11 +50,16 @@ export const searchExistingCert = async (searchQuery: {
 };
 
 export const saveCert = async (id: string, data: any) => {
-  const result = await elasticSearchAPI.push(`/${CERT_INDEX}/_doc/${id}`, data);
+  const result = await elasticSearchAPI.push(
+    `/${certIndexName}/_doc/${id}`,
+    data,
+  );
   return result.data;
 };
 
 export const removeCert = async (id: string) => {
-  const result = await elasticSearchAPI.deleteDoc(`/${CERT_INDEX}/_doc/${id}`);
+  const result = await elasticSearchAPI.deleteDoc(
+    `/${certIndexName}/_doc/${id}`,
+  );
   return result.data;
 };
