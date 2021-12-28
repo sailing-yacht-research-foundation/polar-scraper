@@ -360,20 +360,24 @@ function parseORRFullPolarInformations() {
 
   const trueWindAngles: { twa: number; speeds: number[] }[] = [];
   let currentIndex = 0;
+  let lastTWAIndex = 0;
 
   document
     .querySelectorAll(
       '#polar_speed > div > div > table > tbody > tr > td:nth-child(1)',
     )
     .forEach((record) => {
-      if (currentIndex >= 2 && currentIndex <= 11) {
+      let twa: number | undefined;
+      if (record.textContent !== null) {
+        twa = parseFloat(record.textContent.replace('°', ''));
+      }
+      if (twa && !isNaN(twa)) {
         const speeds: number[] = [];
         skippedFirst = false;
+        lastTWAIndex = currentIndex + 1;
         document
           .querySelectorAll<HTMLTableCellElement>(
-            `#polar_speed > div > div > table > tbody > tr:nth-child(${
-              currentIndex + 1
-            }) > td`,
+            `#polar_speed > div > div > table > tbody > tr:nth-child(${lastTWAIndex}) > td`,
           )
           .forEach((innerRecord) => {
             if (!skippedFirst) {
@@ -385,12 +389,10 @@ function parseORRFullPolarInformations() {
             }
           });
 
-        if (record.textContent !== null) {
-          trueWindAngles.push({
-            twa: parseFloat(record.textContent.replace('°', '')),
-            speeds: speeds,
-          });
-        }
+        trueWindAngles.push({
+          twa,
+          speeds,
+        });
       }
       currentIndex++;
     });
@@ -401,7 +403,9 @@ function parseORRFullPolarInformations() {
 
   document
     .querySelectorAll<HTMLTableCellElement>(
-      '#polar_speed > div > div > table > tbody > tr:nth-child(13) > td',
+      `#polar_speed > div > div > table > tbody > tr:nth-child(${
+        lastTWAIndex + 1
+      }) > td`,
     )
     .forEach((record) => {
       if (!skippedFirst) {
@@ -419,7 +423,9 @@ function parseORRFullPolarInformations() {
 
   document
     .querySelectorAll<HTMLTableCellElement>(
-      '#polar_speed > div > div > table > tbody > tr:nth-child(14) > td',
+      `#polar_speed > div > div > table > tbody > tr:nth-child(${
+        lastTWAIndex + 2
+      }) > td`,
     )
     .forEach((record) => {
       if (!skippedFirst) {
@@ -504,7 +510,7 @@ function parseORRFullPolarInformations() {
 
   const trueWindAnglesTA: { twa: number; speeds: number[] }[] = [];
   currentIndex = 0;
-  let lastTWAIndex = 0;
+  lastTWAIndex = 0;
 
   document
     .querySelectorAll<HTMLTableCellElement>(
@@ -569,7 +575,7 @@ function parseORRFullPolarInformations() {
 
   document
     .querySelectorAll<HTMLTableCellElement>(
-      `#polar_speed > div > div > table > tbody > tr:nth-child(${
+      `#polar_time > div > div > table > tbody > tr:nth-child(${
         lastTWAIndex + 2
       }) > td`,
     )
@@ -578,7 +584,7 @@ function parseORRFullPolarInformations() {
         skippedFirst = true;
       } else {
         if (record.textContent !== null) {
-          optRunAngles.push(parseFloat(record.textContent.replace('°', '')));
+          optRunAnglesTA.push(parseFloat(record.textContent.replace('°', '')));
         }
       }
     });
