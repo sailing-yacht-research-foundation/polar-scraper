@@ -1,29 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 
-export default function makeCert(data: {
-  organization: string;
-  subOrganization?: string;
-  certType: string;
-  builder?: string;
-  owner?: string;
-  certNumber?: string;
-  issuedDate?: string;
-  expireDate?: string;
-  measureDate?: string;
-  country?: string;
-  sailNumber?: string;
-  boatName?: string;
-  className?: string;
-  beam?: number;
-  draft?: number;
-  displacement?: number;
-  extras: string;
-  hasPolars: boolean;
-  polars?: any; // TODO: Type this
-  hasTimeAllowances: boolean;
-  timeAllowances?: any; // TODO: Type this
-  originalId: string;
-}) {
+import { MakeCertParam } from '../types/GeneralType';
+
+export default function makeCert(data: MakeCertParam) {
   const {
     organization,
     subOrganization,

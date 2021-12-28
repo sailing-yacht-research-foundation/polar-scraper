@@ -199,7 +199,6 @@ export async function downloadORCCerts(
         speeds: number[];
       }[] = [];
 
-      let count = 0;
       Object.keys(cert.Allowances).forEach((k) => {
         const angle = parseFloat(k.split('R')[1]);
         if (!isNaN(angle)) {
@@ -212,7 +211,6 @@ export async function downloadORCCerts(
           p.push({ twa: angle, speeds: speedsKnots });
           ta.push({ twa: angle, speeds: speedsSecMile });
         }
-        count++;
       });
       const polars = {
         windSpeeds: cert.Allowances.WindSpeeds,
