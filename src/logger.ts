@@ -16,7 +16,7 @@ winston.addColors({
 
 const logger = createLogger({
   format: combine(errors({ stack: true }), timestamp(), logFormat),
-  defaultMeta: { service: 'puppeteer-service' },
+  defaultMeta: { service: 'polar-scraper' },
   exceptionHandlers: [
     new transports.File({ filename: `${logFolder}/exceptions.log` }),
     new transports.Console({
