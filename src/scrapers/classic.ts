@@ -30,7 +30,6 @@ export async function scrapeClassic(year: number) {
         )
         .forEach((row) => {
           if (row.children[0].textContent !== 'Name') {
-            console.log('asd', row.children[3]);
             certs.push({
               owner: row.children[0].textContent || '',
               boatName: row.children[1].textContent || '',
