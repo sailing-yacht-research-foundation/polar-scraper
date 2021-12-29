@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "scrape:orr": "node build/indexORR.ts",
-    "scrape:orr-dev": "ts-node src/indexORR.ts",
+    "scrape": "node build/index.js",
+    "scrape:dev": "ts-node src/index.ts",
     "build": "rm -rf ./build && tsc --project ./",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\" --fix",

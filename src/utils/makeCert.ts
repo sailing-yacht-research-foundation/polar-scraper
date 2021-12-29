@@ -1,29 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 
-export default function makeCert(data: {
-  organization: string;
-  subOrganization: string | null | undefined;
-  certType: string;
-  builder: string | null | undefined;
-  owner: string | null | undefined;
-  certNumber: string | null | undefined;
-  issuedDate: string | null | undefined;
-  expireDate: string | null | undefined;
-  measureDate: string | null | undefined;
-  country: string | null | undefined;
-  sailNumber: string | null | undefined;
-  boatName: string | undefined;
-  className: string | null | undefined;
-  beam: number;
-  draft: number;
-  displacement: number;
-  extras: string;
-  hasPolars: boolean;
-  polars?: any; // TODO: Type this
-  hasTimeAllowances: boolean;
-  timeAllowances?: any; // TODO: Type this
-  originalId: string;
-}) {
+import { MakeCertParam } from '../types/GeneralType';
+
+export default function makeCert(data: MakeCertParam) {
   const {
     organization,
     subOrganization,
@@ -54,7 +33,7 @@ export default function makeCert(data: {
     subOrganization,
     certType,
     builder,
-    owner,
+    owner: owner || null,
     certNumber,
     issuedDate: issuedDate ? new Date(issuedDate) : null,
     expireDate: expireDate ? new Date(expireDate) : null,
@@ -63,9 +42,9 @@ export default function makeCert(data: {
     sailNumber,
     boatName,
     className,
-    beam,
-    draft,
-    displacement,
+    beam: beam || null,
+    draft: draft || null,
+    displacement: displacement || null,
     extras,
     hasPolars,
     polars,
