@@ -55,10 +55,11 @@ resource "aws_cloudwatch_event_rule" "everyday_rule" {
 }
 
 resource "aws_cloudwatch_event_target" "polar_scraper_scheduled_task" {
-  rule      = aws_cloudwatch_event_rule.everyday_rule.name
-  target_id = var.task_name
-  arn       = var.scraper_runner_arn
-  role_arn  = aws_iam_role.polar_scraper_role.arn
+  rule       = aws_cloudwatch_event_rule.everyday_rule.name
+  target_id  = var.task_name
+  arn        = var.scraper_runner_arn
+  role_arn   = aws_iam_role.polar_scraper_role.arn
+  is_enabled = false
 
   ecs_target {
     launch_type         = "FARGATE"
