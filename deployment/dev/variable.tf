@@ -21,3 +21,8 @@ variable "iam_ecsTaskExecution_role" {
 variable "task_name" {
   default = "polar-scraper-task"
 }
+
+variable "scraper_runner_arn" {
+  default     = "arn:aws:ecs:us-east-1:335855654610:cluster/scraper-runner"
+  description = "The cluster of scraper runner on DEV"
+}
