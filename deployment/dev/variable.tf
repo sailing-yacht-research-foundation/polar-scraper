@@ -17,3 +17,7 @@ variable "iam_ecsTaskExecution_role" {
   default     = "arn:aws:iam::335855654610:role/ecsTaskExecutionRole"
   description = "The IAM Role to run ECS Task"
 }
+
+variable "task_name" {
+  default = "polar-scraper-task"
+}
