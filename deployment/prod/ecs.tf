@@ -1,7 +1,3 @@
-resource "aws_ecs_cluster" "polar_scraper_cluster" {
-  name = "Polar-Scraper-Cluster"
-}
-
 resource "aws_cloudwatch_log_group" "polar_scraper_cw_log_group" {
   name = "PolarScraper-log"
 
