@@ -1,0 +1,55 @@
+import { v4 as uuidv4 } from 'uuid';
+
+import { MakeCertParam } from '../types/GeneralType';
+
+export default function makeCert(data: MakeCertParam) {
+  const {
+    organization,
+    subOrganization,
+    certType,
+    builder,
+    owner,
+    certNumber,
+    issuedDate,
+    expireDate,
+    measureDate,
+    country,
+    sailNumber,
+    boatName,
+    className,
+    beam,
+    draft,
+    displacement,
+    extras,
+    hasPolars,
+    polars,
+    hasTimeAllowances,
+    timeAllowances,
+    originalId,
+  } = data;
+  return {
+    syrfId: uuidv4(),
+    organization,
+    subOrganization,
+    certType,
+    builder,
+    owner: owner || null,
+    certNumber,
+    issuedDate: issuedDate ? new Date(issuedDate) : null,
+    expireDate: expireDate ? new Date(expireDate) : null,
+    measureDate: measureDate ? new Date(measureDate) : null,
+    country,
+    sailNumber,
+    boatName,
+    className,
+    beam: beam || null,
+    draft: draft || null,
+    displacement: displacement || null,
+    extras,
+    hasPolars,
+    polars,
+    hasTimeAllowances,
+    timeAllowances,
+    originalId,
+  };
+}

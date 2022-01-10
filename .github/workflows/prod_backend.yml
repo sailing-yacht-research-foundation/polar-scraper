@@ -1,0 +1,77 @@
+name: Polar Scraper pipeline for production
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    job1:
+        name: Build image and Push to ECR for prod
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: us-east-2
+
+            - name: Login to Amazon ECR
+              id: login-ecr
+              uses: aws-actions/amazon-ecr-login@v1
+
+            - name: Build, tag, and push the image to Amazon ECR
+              id: build-image
+              env:
+                  ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+                  ECR_REPOSITORY: ${{ secrets.REPO_NAME }}
+                  IMAGE_TAG: latest
+              run: |
+                  # Build a docker container and push it to ECR
+                  docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+                  echo "Pushing image to ECR..."
+                  docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+                  echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+    job2:
+        needs: job1
+        name: Deploy to ECS
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v1
+
+            - name: Install Terraform
+              env:
+                  TERRAFORM_VERSION: '0.12.15'
+              run: |
+                  tf_version=$TERRAFORM_VERSION
+                  wget https://releases.hashicorp.com/terraform/"$tf_version"/terraform_"$tf_version"_linux_amd64.zip
+                  unzip terraform_"$tf_version"_linux_amd64.zip
+                  sudo mv terraform /usr/local/bin/
+            - name: Verify Terraform version
+              run: terraform --version
+
+            - name: Terraform init
+              env:
+                  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+              run: docker-compose -f deployment/prod/docker-compose.yml run --rm terraform init -input=false
+
+            - name: Terraform validation
+              run: docker-compose -f deployment/prod/docker-compose.yml run --rm terraform validate
+
+            - name: Terraform plan
+              env:
+                  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+              run: docker-compose -f deployment/prod/docker-compose.yml run --rm terraform plan
+
+            - name: Terraform apply
+              env:
+                  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+              run: docker-compose -f deployment/prod/docker-compose.yml run --rm terraform apply -auto-approve -input=false
