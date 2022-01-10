@@ -7,10 +7,10 @@ terraform {
   }
 
    backend "s3" {
-     bucket          = "syrf-polar-scraper-dev-terraform-state"
+     bucket          = "syrf-polar-scraper-prod-terraform-state"
      key             = "global/s3/terraform.tfstate"
-     region          = "us-east-1"
-     dynamodb_table  = "polar-scraper-dev-tf-state-locking"
+     region          = "us-east-2"
+     dynamodb_table  = "polar-scraper-prod-tf-state-locking"
      encrypt         = true
    }
 
