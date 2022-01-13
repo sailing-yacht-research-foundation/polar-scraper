@@ -48,7 +48,7 @@ resource "aws_cloudwatch_event_rule" "everyday_rule" {
   name                = "polar-scraper-daily"
   description         = "Runs the polar scraper daily at 00:30 UTC"
   schedule_expression = "cron(30 00 * * ? *)"
-  is_enabled          = false
+  is_enabled          = true
 }
 
 resource "aws_cloudwatch_event_target" "polar_scraper_scheduled_task" {
