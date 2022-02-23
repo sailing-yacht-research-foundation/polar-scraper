@@ -22,34 +22,63 @@ export default function makeCert(data: MakeCertParam) {
     displacement,
     extras,
     hasPolars,
-    polars,
     hasTimeAllowances,
-    timeAllowances,
     originalId,
   } = data;
+  let time_allowances;
+  if (data.timeAllowances) {
+    const { windSpeeds, beatVMGs, timeAllowances, runVMGs, gybeAngles } =
+      data.timeAllowances;
+    time_allowances = {
+      wind_speeds: windSpeeds,
+      beat_vmgs: beatVMGs,
+      time_allowances: timeAllowances,
+      run_vmgs: runVMGs,
+      gybe_angles: gybeAngles,
+    };
+  }
+  let polars;
+  if (data.polars) {
+    const {
+      windSpeeds,
+      beatAngles,
+      beatVMGs,
+      polars: polarValues,
+      runVMGs,
+      gybeAngles,
+    } = data.polars;
+    polars = {
+      wind_speeds: windSpeeds,
+      beat_angles: beatAngles,
+      beat_vmgs: beatVMGs,
+      polars: polarValues,
+      run_vmgs: runVMGs,
+      gybe_angles: gybeAngles,
+    };
+  }
   return {
-    syrfId: uuidv4(),
+    syrf_id: uuidv4(),
     organization,
-    subOrganization,
-    certType,
+    sub_organization: subOrganization,
+    cert_type: certType,
     builder,
     owner: owner || null,
-    certNumber,
-    issuedDate: issuedDate ? new Date(issuedDate) : null,
-    expireDate: expireDate ? new Date(expireDate) : null,
-    measureDate: measureDate ? new Date(measureDate) : null,
+    cert_number: certNumber,
+    issued_date: issuedDate ? new Date(issuedDate) : null,
+    expire_date: expireDate ? new Date(expireDate) : null,
+    measure_date: measureDate ? new Date(measureDate) : null,
     country,
-    sailNumber,
-    boatName,
-    className,
+    sail_number: sailNumber,
+    boat_name: boatName,
+    class_name: className,
     beam: beam || null,
     draft: draft || null,
     displacement: displacement || null,
     extras,
-    hasPolars,
+    has_polars: hasPolars,
     polars,
-    hasTimeAllowances,
-    timeAllowances,
-    originalId,
+    has_time_allowances: hasTimeAllowances,
+    time_allowances,
+    original_id: originalId,
   };
 }

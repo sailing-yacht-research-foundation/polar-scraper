@@ -34,17 +34,17 @@ let api = axios.create({
   try {
     const result = await api.put(`${certIndexName}/_mapping`, {
       properties: {
-        'polars.windSpeeds': { type: 'double' },
-        'polars.beatAngles': { type: 'double' },
-        'polars.beatVMGs': { type: 'double' },
+        'polars.wind_speeds': { type: 'double' },
+        'polars.beat_angles': { type: 'double' },
+        'polars.beat_vmgs': { type: 'double' },
         'polars.polars.speeds': { type: 'double' },
-        'polars.runVMGs': { type: 'double' },
-        'polars.gybeAngles': { type: 'double' },
-        'timeAllowances.windSpeeds': { type: 'double' },
-        'timeAllowances.beatVMGs': { type: 'double' },
-        'timeAllowances.timeAllowances.speeds': { type: 'double' },
-        'timeAllowances.runVMGs': { type: 'double' },
-        'timeAllowances.gybeAngles': { type: 'double' },
+        'polars.run_vmgs': { type: 'double' },
+        'polars.gybe_angles': { type: 'double' },
+        'time_allowances.wind_speeds': { type: 'double' },
+        'time_allowances.beat_vmgs': { type: 'double' },
+        'time_allowances.time_allowances.speeds': { type: 'double' },
+        'time_allowances.run_vmgs': { type: 'double' },
+        'time_allowances.gybe_angles': { type: 'double' },
       },
     });
     console.log(`${certIndexName} mapped: ${JSON.stringify(result.data)}`);
