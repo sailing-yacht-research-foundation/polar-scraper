@@ -5,14 +5,19 @@ import axios from 'axios';
 import logger from '../logger';
 import makeCert from '../utils/makeCert';
 import { closePageAndBrowser, launchBrowser } from '../utils/puppeteerLauncher';
-import { saveCert, searchExistingCert } from '../services/certificateService';
+import { saveCert } from '../services/certificateService';
 import { organizations } from '../enum';
 
 import { ORCAllowances, RMS } from '../types/ORCType';
+import { getExistingCerts } from '../utils/getExistingCert';
+import { ExistingCertData } from '../types/GeneralType';
 
 const ORC_URL = 'https://data.orc.org/public/WPub.dll/RMS';
 
-export async function scrapeORC(year: number) {
+export async function scrapeORC(
+  year: number,
+  existingCerts: Map<string, ExistingCertData>,
+) {
   const browser = await launchBrowser();
   let page = await browser.newPage();
 
@@ -126,7 +131,15 @@ export async function scrapeORC(year: number) {
     const { data, countries } = countryCodes[i];
 
     for (const country of countries) {
-      await downloadORCCerts(country, data.value, data.name, year);
+      await downloadORCCerts(
+        {
+          country,
+          certCode: data.value,
+          certType: data.name,
+          year,
+        },
+        existingCerts,
+      );
     }
   }
 
@@ -134,14 +147,18 @@ export async function scrapeORC(year: number) {
 }
 
 export async function downloadORCCerts(
-  country: {
-    code: string;
-    name: string;
+  param: {
+    country: {
+      code: string;
+      name: string;
+    };
+    certCode: string;
+    certType: string;
+    year: number;
   },
-  certCode: string,
-  certType: string,
-  year: number,
+  existingCerts: Map<string, ExistingCertData>,
 ) {
+  const { country, certCode, certType, year } = param;
   let rms: RMS[] = [];
   try {
     const result = await axios.get<{
@@ -167,17 +184,11 @@ export async function downloadORCCerts(
     );
   }
   if (rms) {
+    const skippedCerts = [];
     for (let i = 0; i < rms.length; i++) {
       const cert = rms[i];
-      const existingCert = await searchExistingCert({
-        organization: organizations.orc,
-        certType,
-        originalId: cert.RefNo,
-      });
-      if (existingCert.length > 0) {
-        logger.info(
-          `Cert: ${cert.CertNo} - ${cert.RefNo} of ORC exists, skipping`,
-        );
+      if (existingCerts.has(cert.RefNo)) {
+        skippedCerts.push(cert.RefNo);
         continue;
       }
       const beatVmgs: number[] = [];
@@ -262,15 +273,23 @@ export async function downloadORCCerts(
         );
       }
     }
+    logger.info(
+      `Scraped ORC Year: ${year} Country: ${country.name} Cert Type: ${certType}. Stats: ${rms.length} certificates, skipped ${skippedCerts.length} of it.`,
+    );
   }
 }
 
 export async function executeORCCertScrape() {
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
-  for (let year = 2020; year <= currentYear; year++) {
-    logger.info(`Start scraping ORC  - ${year}`);
-    await scrapeORC(year);
-    logger.info(`Finish scraping ORC - ${year}`);
+  const { existingCerts, finishLoading } = await getExistingCerts(
+    organizations.orc,
+  );
+  if (finishLoading) {
+    for (let year = 2021; year <= currentYear; year++) {
+      logger.info(`Start scraping ORC  - ${year}`);
+      await scrapeORC(year, existingCerts);
+      logger.info(`Finish scraping ORC - ${year}`);
+    }
   }
 }

@@ -3,7 +3,10 @@ import logger from '../logger';
 import { searchExistingCert } from '../services/certificateService';
 import { ExistingCertData } from '../types/GeneralType';
 
-export async function getExistingCerts(organization: string, certType: string) {
+export async function getExistingCerts(
+  organization: string,
+  certType?: string,
+) {
   let existingCerts: Map<string, ExistingCertData> = new Map();
   let finishLoading = false;
   try {

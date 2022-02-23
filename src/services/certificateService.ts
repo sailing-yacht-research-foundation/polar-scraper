@@ -9,7 +9,7 @@ import {
 export const searchExistingCert = async (
   searchQuery: {
     organization: string;
-    certType: string;
+    certType?: string;
     originalId?: string;
   },
   scrollId?: string,
@@ -22,12 +22,14 @@ export const searchExistingCert = async (
         organization,
       },
     },
-    {
+  ];
+  if (certType) {
+    queries.push({
       match: {
         cert_type: certType,
       },
-    },
-  ];
+    });
+  }
   if (originalId) {
     queries.push({
       match: {

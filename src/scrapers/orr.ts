@@ -1,15 +1,14 @@
 import dotenv from 'dotenv';
 dotenv.config();
-import { AxiosError } from 'axios';
 
 import logger from '../logger';
 import makeCert from '../utils/makeCert';
 import { closePageAndBrowser, launchBrowser } from '../utils/puppeteerLauncher';
-import { saveCert, searchExistingCert } from '../services/certificateService';
+import { saveCert } from '../services/certificateService';
+import { getExistingCerts } from '../utils/getExistingCert';
 
 import { certificationTypes, organizations } from '../enum';
 import { ExistingCertData } from '../types/GeneralType';
-import { getExistingCerts } from '../utils/getExistingCert';
 
 const defaultORRTimeOut = 10000;
 
@@ -698,7 +697,6 @@ export async function executeORRCertScrape() {
     existingCerts: existingOrrFullCerts,
     finishLoading: finishLoadingOrrFull,
   } = await getExistingCerts(organizations.orr, certificationTypes.orrFull);
-  console.log(existingOrrFullCerts, finishLoadingOrrFull);
   if (finishLoadingOrrFull) {
     for (let year = 2021; year <= currentYear; year++) {
       logger.info(`Start scraping ORR Full year: ${year}`);
