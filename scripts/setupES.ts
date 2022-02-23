@@ -40,11 +40,11 @@ let api = axios.create({
         'polars.polars.speeds': { type: 'double' },
         'polars.run_vmgs': { type: 'double' },
         'polars.gybe_angles': { type: 'double' },
-        'timeAllowances.wind_speeds': { type: 'double' },
-        'timeAllowances.beat_vmgs': { type: 'double' },
-        'timeAllowances.time_allowances.speeds': { type: 'double' },
-        'timeAllowances.run_vmgs': { type: 'double' },
-        'timeAllowances.gybe_angles': { type: 'double' },
+        'time_allowances.wind_speeds': { type: 'double' },
+        'time_allowances.beat_vmgs': { type: 'double' },
+        'time_allowances.time_allowances.speeds': { type: 'double' },
+        'time_allowances.run_vmgs': { type: 'double' },
+        'time_allowances.gybe_angles': { type: 'double' },
       },
     });
     console.log(`${certIndexName} mapped: ${JSON.stringify(result.data)}`);

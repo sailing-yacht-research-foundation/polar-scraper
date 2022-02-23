@@ -8,10 +8,15 @@ import { closePageAndBrowser, launchBrowser } from '../utils/puppeteerLauncher';
 import { saveCert, searchExistingCert } from '../services/certificateService';
 
 import { certificationTypes, organizations } from '../enum';
+import { ExistingCertData } from '../types/GeneralType';
+import { getExistingCerts } from '../utils/getExistingCert';
 
 const defaultORRTimeOut = 10000;
 
-export async function scrapeORRFull(year: number) {
+export async function scrapeORRFull(
+  year: number,
+  existingCerts: Map<string, ExistingCertData>,
+) {
   const browser = await launchBrowser();
   let page = await browser.newPage();
   //  ORR full certs with polars.
@@ -54,36 +59,19 @@ export async function scrapeORRFull(year: number) {
   } catch (error) {
     logger.error(`Failed to Scrape ORR Certs`, error);
   }
+  const skippedCerts = [];
   for (let i = 0; i < orrCertRecords.length; i++) {
     const {
       skuId,
       yacht: boatName,
       effectiveDate,
       expireDate,
-      certNumber,
     } = orrCertRecords[i];
     const originalId = String(skuId).replace(/-/g, '_');
-    try {
-      const result = await searchExistingCert({
-        organization: organizations.orr,
-        certType: certificationTypes.orrFull,
-        originalId,
-      });
-      if (result.length > 0) {
-        logger.info(
-          `Cert: ${certNumber} of ORR Full - ${skuId} exists, skipping`,
-        );
-        continue;
-        // TODO: Should we instead of skipping, update the values? Will this changes frequently, or is it impossible to change
-      }
-    } catch (error) {
-      logger.error(
-        `Checking cert exists failed:`,
-        (error as AxiosError).response?.data,
-      );
+    if (existingCerts.has(originalId)) {
+      skippedCerts.push(originalId);
       continue;
     }
-
     try {
       let orrUrl = `https://www.regattaman.com/cert_form.php?sku=${skuId}&rnum=0&sort=undefined&ssort=undefined&sdir=true&ssdir=true`;
       await page.goto(orrUrl, {
@@ -112,10 +100,16 @@ export async function scrapeORRFull(year: number) {
   }
 
   await closePageAndBrowser({ page, browser });
+  logger.info(
+    `Scraped ORR Full: ${orrCertRecords.length} certificates, skipped ${skippedCerts.length} of it.`,
+  );
   return;
 }
 
-export async function scrapeORRez(year: number) {
+export async function scrapeORRez(
+  year: number,
+  existingCerts: Map<string, ExistingCertData>,
+) {
   const browser = await launchBrowser();
   let page = await browser.newPage();
 
@@ -157,35 +151,19 @@ export async function scrapeORRez(year: number) {
   } catch (error) {
     logger.error(`Failed to Scrape ORR EZ Certs`, error);
   }
+  const skippedCerts = [];
   for (let i = 0; i < orrCertRecords.length; i++) {
     const {
       skuId,
       yacht: boatName,
       effectiveDate,
       expireDate,
-      certNumber,
     } = orrCertRecords[i];
     const originalId = String(skuId).replace(/-/g, '_');
-    try {
-      const result = await searchExistingCert({
-        organization: organizations.orr,
-        certType: certificationTypes.orrEZ,
-        originalId,
-      });
-      if (result.length > 0) {
-        logger.info(
-          `Cert: ${certNumber} of ORR EZ - ${skuId} exists, skipping`,
-        );
-        continue;
-      }
-    } catch (error) {
-      logger.error(
-        `Checking cert exists failed:`,
-        (error as AxiosError).response?.data,
-      );
+    if (existingCerts.has(originalId)) {
+      skippedCerts.push(originalId);
       continue;
     }
-
     try {
       let ezUrl = `https://www.regattaman.com/cert_form.php?sku=${skuId}&rnum=0`;
       await page.goto(ezUrl, {
@@ -214,10 +192,15 @@ export async function scrapeORRez(year: number) {
   }
 
   await closePageAndBrowser({ page, browser });
+  logger.info(
+    `Scraped ORR EZ: ${orrCertRecords.length} certificates, skipped ${skippedCerts.length} of it.`,
+  );
   return;
 }
 
-export async function scrapeORROneDesign() {
+export async function scrapeORROneDesign(
+  existingCerts: Map<string, ExistingCertData>,
+) {
   const browser = await launchBrowser();
   let page = await browser.newPage();
 
@@ -241,27 +224,14 @@ export async function scrapeORROneDesign() {
     logger.error(`Failed to Scrape ORR EZ One Design Certs`, error);
   }
 
+  const skippedCerts = [];
   for (let i = 0; i < oneDesignUrls.length; i++) {
     const skuId = oneDesignUrls[i].toString().split('sku=')[1];
     const originalId = String(skuId).replace(/-/g, '_');
-    try {
-      const result = await searchExistingCert({
-        organization: organizations.orr,
-        certType: certificationTypes.orrOD,
-        originalId,
-      });
-      if (result.length > 0) {
-        logger.info(`Cert: ORR EZ One Design - ${skuId} exists, skipping`);
-        continue;
-      }
-    } catch (error) {
-      logger.error(
-        `Checking cert exists failed:`,
-        (error as AxiosError).response?.data,
-      );
+    if (existingCerts.has(originalId)) {
+      skippedCerts.push(originalId);
       continue;
     }
-
     try {
       await page.goto(oneDesignUrls[i], {
         timeout: defaultORRTimeOut,
@@ -286,6 +256,9 @@ export async function scrapeORROneDesign() {
   }
 
   await closePageAndBrowser({ page, browser });
+  logger.info(
+    `Scraped ORR OD: ${oneDesignUrls.length} certificates, skipped ${skippedCerts.length} of it.`,
+  );
   return;
 }
 
@@ -721,19 +694,38 @@ export async function executeORRCertScrape() {
   const currentYear = currentDate.getFullYear();
   // Note: 2020 version doesn't have polar, and different Layout. Will we need them if they don't have polars
   // 1. Scrape ORR Full certs
-  for (let year = 2021; year <= currentYear; year++) {
-    logger.info(`Start scraping ORR Full year: ${year}`);
-    await scrapeORRFull(year);
-    logger.info(`Finished scraping ORR Full year: ${year}`);
+  const {
+    existingCerts: existingOrrFullCerts,
+    finishLoading: finishLoadingOrrFull,
+  } = await getExistingCerts(organizations.orr, certificationTypes.orrFull);
+  console.log(existingOrrFullCerts, finishLoadingOrrFull);
+  if (finishLoadingOrrFull) {
+    for (let year = 2021; year <= currentYear; year++) {
+      logger.info(`Start scraping ORR Full year: ${year}`);
+      await scrapeORRFull(year, existingOrrFullCerts);
+      logger.info(`Finished scraping ORR Full year: ${year}`);
+    }
   }
 
   // 2. Scrape ORR EZ certs
-  for (let year = 2020; year <= currentYear; year++) {
-    logger.info(`Start scraping ORR EZ year: ${year}`);
-    await scrapeORRez(year);
-    logger.info(`Finished scraping ORR EZ year: ${year}`);
+  const {
+    existingCerts: existingOrrEzCerts,
+    finishLoading: finishLoadingOrrEz,
+  } = await getExistingCerts(organizations.orr, certificationTypes.orrEZ);
+  if (finishLoadingOrrEz) {
+    for (let year = 2020; year <= currentYear; year++) {
+      logger.info(`Start scraping ORR EZ year: ${year}`);
+      await scrapeORRez(year, existingOrrEzCerts);
+      logger.info(`Finished scraping ORR EZ year: ${year}`);
+    }
   }
 
-  // 3. Scrape ORR One Design certs
-  await scrapeORROneDesign();
+  // 3. Scrape ORR One Design
+  const {
+    existingCerts: existingOrrODCerts,
+    finishLoading: finishLoadingOrrOD,
+  } = await getExistingCerts(organizations.orr, certificationTypes.orrOD);
+  if (finishLoadingOrrOD) {
+    await scrapeORROneDesign(existingOrrODCerts);
+  }
 }

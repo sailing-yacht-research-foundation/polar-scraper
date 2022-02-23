@@ -1,13 +1,20 @@
 import elasticSearchAPI from './elasticSearchAPI';
 import { certIndexName } from '../enum';
 
-import { ElasticSearchQueryResult } from '../types/GeneralType';
+import {
+  ElasticSearchQueryResult,
+  ExistingCertData,
+} from '../types/GeneralType';
 
-export const searchExistingCert = async (searchQuery: {
-  organization: string;
-  certType: string;
-  originalId?: string;
-}) => {
+export const searchExistingCert = async (
+  searchQuery: {
+    organization: string;
+    certType: string;
+    originalId?: string;
+  },
+  scrollId?: string,
+): Promise<{ scrollId: string; data: ExistingCertData[] }> => {
+  // Using scroll search. Our elasticsearch uses version 7.9, unable to use Point in Time searches (available at 7.10)
   const { organization, certType, originalId } = searchQuery;
   const queries: any[] = [
     {
@@ -17,7 +24,7 @@ export const searchExistingCert = async (searchQuery: {
     },
     {
       match: {
-        certType,
+        cert_type: certType,
       },
     },
   ];
@@ -34,21 +41,35 @@ export const searchExistingCert = async (searchQuery: {
     cert_type: string;
     cert_number: string;
     original_id: string;
-  }> = await elasticSearchAPI.query(`/${certIndexName}/_search`, {
-    query: {
-      bool: {
-        must: queries,
-      },
-    },
-    _source: [
-      'syrf_id',
-      'organization',
-      'cert_type',
-      'cert_number',
-      'original_id',
-    ],
-  });
-  return esResult.data.hits.hits.map((row) => {
+  }> = await elasticSearchAPI.query(
+    scrollId ? `/_search/scroll` : `/${certIndexName}/_search?scroll=1m`,
+    Object.assign(
+      {},
+      scrollId
+        ? {
+            scroll_id: scrollId,
+            scroll: '1m',
+          }
+        : {
+            query: {
+              bool: {
+                must: queries,
+              },
+            },
+            _source: [
+              'syrf_id',
+              'organization',
+              'cert_type',
+              'cert_number',
+              'original_id',
+            ],
+            size: 10,
+          },
+    ),
+  );
+  let returnedScrollId: string =
+    scrollId || String(esResult.data['_scroll_id']);
+  const data = esResult.data.hits.hits.map((row) => {
     const {
       syrf_id: syrfId,
       organization,
@@ -58,6 +79,10 @@ export const searchExistingCert = async (searchQuery: {
     } = row._source;
     return { syrfId, organization, certType, certNumber, originalId };
   });
+  return {
+    scrollId: returnedScrollId,
+    data,
+  };
 };
 
 export const saveCert = async (id: string, data: any) => {

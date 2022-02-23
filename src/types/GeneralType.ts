@@ -1,5 +1,6 @@
 export type ElasticSearchQueryResult<T> = {
   data: {
+    _scroll_id?: string;
     hits: {
       hits: {
         _index: string;
@@ -54,5 +55,13 @@ export type MakeCertParam = {
     runVMGs: number[];
     gybeAngles: number[];
   };
+  originalId: string;
+};
+
+export type ExistingCertData = {
+  syrfId: string;
+  organization: string;
+  certType: string;
+  certNumber: string;
   originalId: string;
 };
