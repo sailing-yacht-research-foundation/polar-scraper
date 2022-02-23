@@ -22,11 +22,40 @@ export default function makeCert(data: MakeCertParam) {
     displacement,
     extras,
     hasPolars,
-    polars,
     hasTimeAllowances,
-    timeAllowances,
     originalId,
   } = data;
+  let time_allowances;
+  if (data.timeAllowances) {
+    const { windSpeeds, beatVMGs, timeAllowances, runVMGs, gybeAngles } =
+      data.timeAllowances;
+    time_allowances = {
+      wind_speeds: windSpeeds,
+      beat_vmgs: beatVMGs,
+      time_allowances: timeAllowances,
+      run_vmgs: runVMGs,
+      gybe_angles: gybeAngles,
+    };
+  }
+  let polars;
+  if (data.polars) {
+    const {
+      windSpeeds,
+      beatAngles,
+      beatVMGs,
+      polars: polarValues,
+      runVMGs,
+      gybeAngles,
+    } = data.polars;
+    polars = {
+      wind_speeds: windSpeeds,
+      beat_angles: beatAngles,
+      beat_vmgs: beatVMGs,
+      polars: polarValues,
+      run_vmgs: runVMGs,
+      gybe_angles: gybeAngles,
+    };
+  }
   return {
     syrf_id: uuidv4(),
     organization,
@@ -49,7 +78,7 @@ export default function makeCert(data: MakeCertParam) {
     has_polars: hasPolars,
     polars,
     has_time_allowances: hasTimeAllowances,
-    time_allowances: timeAllowances,
+    time_allowances,
     original_id: originalId,
   };
 }
