@@ -8,13 +8,18 @@ dayjs.extend(utc);
 
 import logger from '../logger';
 import makeCert from '../utils/makeCert';
-import { saveCert, searchExistingCert } from '../services/certificateService';
+import { saveCert } from '../services/certificateService';
 import { organizations } from '../enum';
 import { closePageAndBrowser, launchBrowser } from '../utils/puppeteerLauncher';
+import { getExistingCerts } from '../utils/getExistingCert';
 
 import { ClassicCertData } from '../types/ClassicType';
+import { ExistingCertData } from '../types/GeneralType';
 
-export async function scrapeClassic(year: number) {
+export async function scrapeClassic(
+  year: number,
+  existingCerts: Map<string, ExistingCertData>,
+) {
   const browser = await launchBrowser();
   let page = await browser.newPage();
 
@@ -62,15 +67,11 @@ export async function scrapeClassic(year: number) {
   }
   await closePageAndBrowser({ page, browser });
 
+  const skippedCerts = [];
   for (let i = 0; i < classicCerts.length; i++) {
     const cert = classicCerts[i];
-    const existingCert = await searchExistingCert({
-      organization: organizations.classic,
-      certType: cert.division,
-      originalId: cert.certId,
-    });
-    if (existingCert.length > 0) {
-      logger.info(`Cert: ${cert.certId} of Classic exists, skipping`);
+    if (existingCerts.has(cert.certId)) {
+      skippedCerts.push(cert.certId);
       continue;
     }
     const issuedDate = cert.recorded
@@ -93,7 +94,7 @@ export async function scrapeClassic(year: number) {
       originalId: cert.certId,
     });
     try {
-      const result = await saveCert(classicCert.syrfId, classicCert);
+      const result = await saveCert(classicCert.syrf_id, classicCert);
       logger.info(`New cert saved: id: ${result._id}, certId: ${cert.certId}`);
     } catch (error) {
       logger.error(
@@ -101,15 +102,23 @@ export async function scrapeClassic(year: number) {
       );
     }
   }
+  logger.info(
+    `Scraped Classic year ${year}. Stats: ${classicCerts.length} certificates, skipped ${skippedCerts.length} of it.`,
+  );
   return;
 }
 
 export async function executeClassicCertScrape() {
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
-  for (let year = currentYear; year >= 2017; year--) {
-    logger.info(`Start scraping Classic year: ${year}`);
-    await scrapeClassic(year);
-    logger.info(`Finished scraping Classic year: ${year}`);
+  const { existingCerts, finishLoading } = await getExistingCerts(
+    organizations.classic,
+  );
+  if (finishLoading) {
+    for (let year = currentYear; year >= 2017; year--) {
+      logger.info(`Start scraping Classic year: ${year}`);
+      await scrapeClassic(year, existingCerts);
+      logger.info(`Finished scraping Classic year: ${year}`);
+    }
   }
 }
