@@ -61,7 +61,7 @@ export async function scrapeIRC() {
         originalId: `${certNumber}_${sailNumber}`,
       });
       try {
-        const result = await saveCert(ircCert.syrfId, ircCert);
+        const result = await saveCert(ircCert.syrf_id, ircCert);
         logger.info(
           `New cert saved: id: ${result._id}, originalId: ${originalId}`,
         );

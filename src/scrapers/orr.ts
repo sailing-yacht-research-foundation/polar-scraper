@@ -102,7 +102,7 @@ export async function scrapeORRFull(year: number) {
         extras,
         originalId,
       });
-      const result = await saveCert(certificate.syrfId, certificate);
+      const result = await saveCert(certificate.syrf_id, certificate);
       logger.info(
         `New cert saved: id: ${result._id}, originalId: ${originalId}`,
       );
@@ -204,7 +204,7 @@ export async function scrapeORRez(year: number) {
         extras,
         originalId,
       });
-      const result = await saveCert(certificate.syrfId, certificate);
+      const result = await saveCert(certificate.syrf_id, certificate);
       logger.info(
         `New cert saved: id: ${result._id}, originalId: ${originalId}`,
       );
@@ -276,7 +276,7 @@ export async function scrapeORROneDesign() {
         extras,
         originalId,
       });
-      const result = await saveCert(certificate.syrfId, certificate);
+      const result = await saveCert(certificate.syrf_id, certificate);
       logger.info(
         `New cert saved: id: ${result._id}, originalId: ${originalId}`,
       );

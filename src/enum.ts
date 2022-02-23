@@ -1,4 +1,4 @@
-const certIndexName = 'vessel-cert';
+const certIndexName = 'vessel-certificates';
 
 const organizations = {
   orr: 'ORR',

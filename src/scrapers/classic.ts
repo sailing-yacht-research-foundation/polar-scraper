@@ -93,7 +93,7 @@ export async function scrapeClassic(year: number) {
       originalId: cert.certId,
     });
     try {
-      const result = await saveCert(classicCert.syrfId, classicCert);
+      const result = await saveCert(classicCert.syrf_id, classicCert);
       logger.info(`New cert saved: id: ${result._id}, certId: ${cert.certId}`);
     } catch (error) {
       logger.error(

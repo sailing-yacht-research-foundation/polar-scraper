@@ -29,22 +29,33 @@ export const searchExistingCert = async (searchQuery: {
     });
   }
   const esResult: ElasticSearchQueryResult<{
-    syrfId: string;
+    syrf_id: string;
     organization: string;
-    certType: string;
-    certNumber: string;
-    originalId: string;
+    cert_type: string;
+    cert_number: string;
+    original_id: string;
   }> = await elasticSearchAPI.query(`/${certIndexName}/_search`, {
     query: {
       bool: {
         must: queries,
       },
     },
-    _source: ['syrfId', 'organization', 'certType', 'certNumber', 'originalId'],
+    _source: [
+      'syrf_id',
+      'organization',
+      'cert_type',
+      'cert_number',
+      'original_id',
+    ],
   });
   return esResult.data.hits.hits.map((row) => {
-    const { syrfId, organization, certType, certNumber, originalId } =
-      row._source;
+    const {
+      syrf_id: syrfId,
+      organization,
+      cert_type: certType,
+      cert_number: certNumber,
+      original_id: originalId,
+    } = row._source;
     return { syrfId, organization, certType, certNumber, originalId };
   });
 };
