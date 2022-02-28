@@ -13,4 +13,11 @@ const certificationTypes = {
   orrOD: 'ORR-EZ One Design',
 };
 
-export { certIndexName, organizations, certificationTypes };
+const fetchExistingCertCount = 100;
+
+export {
+  certIndexName,
+  organizations,
+  certificationTypes,
+  fetchExistingCertCount,
+};

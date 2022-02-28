@@ -17,7 +17,7 @@ export type ElasticSearchQueryResult<T> = {
 export type MakeCertParam = {
   organization: string;
   subOrganization?: string;
-  certType: string;
+  certType?: string;
   builder?: string;
   owner?: string;
   certNumber?: string;
@@ -64,4 +64,7 @@ export type ExistingCertData = {
   certType: string;
   certNumber: string;
   originalId: string;
+  boatName?: string;
+  issuedDate?: string;
+  country?: string;
 };
