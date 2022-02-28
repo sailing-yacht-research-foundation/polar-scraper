@@ -2,11 +2,15 @@ import fs from 'fs';
 import path from 'path';
 
 var countryMap = new Map<string, string>();
+var iocCountryMap = new Map<string, string>();
+var a2CountryMap = new Map<string, string>();
 
 function loadCountries() {
   const countryList: {
     name: string;
+    a2: string;
     a3: string;
+    ioc: string;
     fifa: string;
   }[] = JSON.parse(
     fs.readFileSync(
@@ -14,19 +18,29 @@ function loadCountries() {
       'utf-8',
     ),
   );
-  countryList.forEach(({ fifa: code, name, a3: alternativeCode }) => {
+  countryList.forEach(({ fifa: code, name, a3: alternativeCode, a2, ioc }) => {
     if (code.includes(',')) {
       countryMap.set(alternativeCode, name);
     } else {
       countryMap.set(code, name);
     }
+    iocCountryMap.set(ioc, name);
+    a2CountryMap.set(a2, name);
   });
 }
 
 loadCountries();
 
 export default function getCountry(code: string) {
-  return countryMap.get(code);
+  let country = countryMap.get(code.toUpperCase());
+  if (!country) {
+    country = iocCountryMap.get(code.toUpperCase());
+  }
+  if (!country) {
+    let a2Code = code.substring(0, 2).toUpperCase();
+    country = a2CountryMap.get(a2Code);
+  }
+  return country;
 }
 
 /*

@@ -29,6 +29,7 @@ const KG_TO_LBS = 2.2046;
 async function getExistingByBoatName(organization: string, certType?: string) {
   let existingCerts: Map<string, ExistingCertData> = new Map();
   let finishLoading = false;
+  const fetchSize = 500;
   try {
     let scrollId: string | undefined;
     let hasMoreData = true;
@@ -41,24 +42,22 @@ async function getExistingByBoatName(organization: string, certType?: string) {
             organization,
             certType,
           },
-          500,
+          fetchSize,
           scrollId,
         );
-        console.log('done fetching');
         scrollId = certResult.scrollId;
-        if (certResult.data.length === 0) {
+        if (certResult.data.length < fetchSize) {
           hasMoreData = false;
           finishLoading = true;
-        } else {
-          certResult.data.forEach((row) => {
-            existingCerts.set(
-              `${row.boatName?.toLowerCase()}|${row.certNumber}|${
-                row.issuedDate ? new Date(row.issuedDate).getFullYear() : '-'
-              }`,
-              row,
-            );
-          });
         }
+        certResult.data.forEach((row) => {
+          existingCerts.set(
+            `${row.boatName?.toLowerCase()}|${row.certNumber}|${
+              row.issuedDate ? new Date(row.issuedDate).getFullYear() : '-'
+            }`,
+            row,
+          );
+        });
       } catch (error) {
         console.trace(error);
         failedCount++;
@@ -135,16 +134,12 @@ const duplicateFilePath = path.resolve(
     ]
   //==========================
   */
-  let invalidIssueDateCount = 0;
-  let invalidExpireDateCount = 0;
+  let invalidDatesCount = 0;
   let countryLessCount = 0;
-  let invalidDates: {
-    issuedDate?: string;
-    rawIssueDate: any;
-  }[] = [];
   let validCerts: any[] = [];
   let invalidCerts: any[] = [];
   let duplicateCerts: any[] = [];
+  let invalidSailNumberToCountry: string[] = [];
 
   let existingKeys: string[] = Array.from(existingCerts.keys());
   let newKeys: string[] = [];
@@ -195,36 +190,26 @@ const duplicateFilePath = path.resolve(
       displacementKg !== '' && !isNaN(Number(displacementKg))
         ? Number(displacementKg)
         : undefined;
-    const country = getCountry(String(sailNumber).slice(0, 3));
+    const country = getCountry(String(sailNumber).substring(0, 3));
 
-    const issuedDate = getValidDate(rawIssueDate); // Possibly "Invalid Date" string in json
+    let issuedDate = getValidDate(rawIssueDate); // Possibly "Invalid Date" string in json
     let expireDate = getValidDate(validUntil);
+    if (!issuedDate && expireDate) {
+      issuedDate = dayjs(expireDate).subtract(1, 'year').toISOString();
+    }
     if (!expireDate && issuedDate) {
       // If undefined, set to 1 year after issuedDate
       expireDate = dayjs(issuedDate).add(1, 'year').toISOString();
     }
     const measureDate = getValidDate(measurementDate);
 
-    if (!issuedDate) {
-      invalidIssueDateCount++;
-      if (
-        !invalidDates.find((row) => {
-          return row.rawIssueDate === rawIssueDate;
-        })
-      ) {
-        invalidDates.push({
-          issuedDate,
-          rawIssueDate,
-        });
-      }
-    }
-
-    if (!expireDate) {
-      invalidExpireDateCount++;
+    if (!issuedDate || !expireDate) {
+      invalidDatesCount++;
     }
 
     if (!country) {
       countryLessCount++;
+      invalidSailNumberToCountry.push(sailNumber);
       // console.log(certNumber, boatName, sailNumber, country);
     }
 
@@ -267,11 +252,9 @@ const duplicateFilePath = path.resolve(
     }
   }
   console.table({
-    invalidExpireDateCount,
-    invalidIssueDateCount,
+    invalidDatesCount,
     countryLessCount,
   });
-  console.log(invalidDates);
   // Invalid Country by sail number -> 8016
   // Invalid issue Date count -> 37097
 
@@ -287,6 +270,11 @@ const duplicateFilePath = path.resolve(
   fs.writeFileSync(
     path.resolve(__dirname, `../files/new_keys.json`),
     JSON.stringify(newKeys),
+    'utf-8',
+  );
+  fs.writeFileSync(
+    path.resolve(__dirname, `../files/sail_number_invalid_country.json`),
+    JSON.stringify(invalidSailNumberToCountry),
     'utf-8',
   );
 })();

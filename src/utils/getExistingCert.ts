@@ -26,14 +26,13 @@ export async function getExistingCerts(
           scrollId,
         );
         scrollId = certResult.scrollId;
-        if (certResult.data.length === 0) {
+        if (certResult.data.length < fetchExistingCertCount) {
           hasMoreData = false;
           finishLoading = true;
-        } else {
-          certResult.data.forEach((row) => {
-            existingCerts.set(row.originalId, row);
-          });
         }
+        certResult.data.forEach((row) => {
+          existingCerts.set(row.originalId, row);
+        });
       } catch (error) {
         console.trace(error);
         failedCount++;
