@@ -44,6 +44,7 @@ export const searchExistingCert = async (
     cert_type: string;
     cert_number: string;
     original_id: string;
+    builder?: string;
     boat_name?: string;
     issued_date?: string;
     country?: string;
@@ -70,6 +71,7 @@ export const searchExistingCert = async (
               'original_id',
               'boat_name',
               'issued_date',
+              'builder',
               'cert_number',
               'issued_date',
               'country',
@@ -90,6 +92,7 @@ export const searchExistingCert = async (
       boat_name: boatName,
       issued_date: issuedDate,
       country,
+      builder,
     } = row._source;
     return {
       syrfId,
@@ -100,6 +103,7 @@ export const searchExistingCert = async (
       boatName,
       issuedDate,
       country,
+      builder,
     };
   });
   return {
