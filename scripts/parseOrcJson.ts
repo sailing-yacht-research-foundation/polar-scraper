@@ -29,6 +29,12 @@ const KG_TO_LBS = 2.2046;
 async function getExistingByBoatName(organization: string, certType?: string) {
   let existingCerts: Map<string, ExistingCertData> = new Map();
   let finishLoading = false;
+  if (true) {
+    return {
+      existingCerts,
+      finishLoading: true,
+    };
+  }
   const fetchSize = 500;
   try {
     let scrollId: string | undefined;
@@ -140,6 +146,7 @@ const duplicateFilePath = path.resolve(
   let invalidCerts: any[] = [];
   let duplicateCerts: any[] = [];
   let invalidSailNumberToCountry: string[] = [];
+  let mismatchPolarTime: string[] = [];
 
   let existingKeys: string[] = Array.from(existingCerts.keys());
   let newKeys: string[] = [];
@@ -213,6 +220,11 @@ const duplicateFilePath = path.resolve(
       // console.log(certNumber, boatName, sailNumber, country);
     }
 
+    let hasTimeAllowances = false;
+    if (timeAllowances?.timeAllowances?.length > 0) {
+      hasTimeAllowances = true;
+    }
+
     const formattedCert = makeCert({
       organization: organizations.orc,
       builder,
@@ -230,9 +242,16 @@ const duplicateFilePath = path.resolve(
       extras: JSON.stringify(certificates[i]),
       hasPolars,
       hasTimeAllowances: false,
+      timeAllowances: hasTimeAllowances ? timeAllowances : undefined,
+      polars: hasPolars ? polars : undefined,
       originalId: orcRef,
     });
 
+    if (!hasTimeAllowances || !hasPolars) {
+      if (hasTimeAllowances || hasPolars) {
+        mismatchPolarTime.push(orcRef);
+      }
+    }
     if (!issuedDate || !expireDate || !country) {
       invalidCerts.push(certificates[i]);
     } else {
@@ -254,6 +273,7 @@ const duplicateFilePath = path.resolve(
   console.table({
     invalidDatesCount,
     countryLessCount,
+    mismatchPolarCount: mismatchPolarTime.length,
   });
   // Invalid Country by sail number -> 8016
   // Invalid issue Date count -> 37097
@@ -275,6 +295,11 @@ const duplicateFilePath = path.resolve(
   fs.writeFileSync(
     path.resolve(__dirname, `../files/sail_number_invalid_country.json`),
     JSON.stringify(invalidSailNumberToCountry),
+    'utf-8',
+  );
+  fs.writeFileSync(
+    path.resolve(__dirname, `../files/mismatch_polar.json`),
+    JSON.stringify(mismatchPolarTime),
     'utf-8',
   );
 })();
