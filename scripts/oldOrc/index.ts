@@ -4,6 +4,7 @@ dotenv.config();
 import { organizations } from '../../src/enum';
 import { searchExistingCert } from '../../src/services/certificateService';
 
+import { parseOrcJson } from './parseOrcJson';
 import { parseJeiterPolars } from './parseJeiterPolars';
 
 import { AxiosError } from 'axios';
@@ -114,7 +115,13 @@ async function getExistingORCCert() {
     console.log('Failed to load existing ORC certs, stopping');
     process.exit(0);
   }
-  console.log('PRE Existing cert size', existingCerts.size);
+  console.log('Initial Existing cert size (Only ES)', existingCerts.size);
+  await parseOrcJson(existingCerts);
+  console.log(
+    'ORC Cert PDF Existing cert size (PDF data added)',
+    existingCerts.size,
+  );
   await parseJeiterPolars(existingCerts);
   console.log('POST Existing cert size', existingCerts.size);
+  console.log('DONE');
 })();
