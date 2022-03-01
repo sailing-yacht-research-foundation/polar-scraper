@@ -109,3 +109,4 @@ dist
 **/.terraform.lock.hcl
 
 files
+build

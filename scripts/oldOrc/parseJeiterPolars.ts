@@ -10,18 +10,19 @@ import utc from 'dayjs/plugin/utc';
 dayjs.extend(customParseFormat);
 dayjs.extend(utc);
 
-import makeCert from '../src/utils/makeCert';
-import getCountry from '../src/utils/getCountry';
-import { convertKnotsToSecPerMile } from '../src/utils/conversionUtils';
-import { organizations } from '../src/enum';
-import { searchExistingCert } from '../src/services/certificateService';
+import makeCert from '../../src/utils/makeCert';
+import getCountry from '../../src/utils/getCountry';
+import { convertKnotsToSecPerMile } from '../../src/utils/conversionUtils';
+import { organizations } from '../../src/enum';
+import { searchExistingCert } from '../../src/services/certificateService';
 
+import { AxiosError } from 'axios';
 import {
   ExistingCertData,
   Polar,
   TimeAllowance,
-} from '../src/types/GeneralType';
-import { AxiosError } from 'axios';
+} from '../../src/types/GeneralType';
+import { ExistingCertMapData } from '.';
 
 type JeiterPolarGeneralFormat = {
   rating: {
@@ -69,60 +70,6 @@ type JeiterPolarGeneralFormat = {
 
 const readFile = promisify(fs.readFile);
 const readDirectory = promisify(fs.readdir);
-
-// For jeiter files, since we don't have cert number, using boat name, builder ,and issue year to validate with existing data
-async function getExistingCerts(organization: string, certType?: string) {
-  let existingCerts: Map<string, ExistingCertData> = new Map();
-  let finishLoading = false;
-  const fetchSize = 500;
-  try {
-    let scrollId: string | undefined;
-    let hasMoreData = true;
-    let failedCount = 0;
-    do {
-      console.log('fetching');
-      try {
-        const certResult = await searchExistingCert(
-          {
-            organization,
-            certType,
-          },
-          fetchSize,
-          scrollId,
-        );
-        scrollId = certResult.scrollId;
-        if (certResult.data.length < fetchSize) {
-          hasMoreData = false;
-          finishLoading = true;
-        }
-        certResult.data.forEach((row) => {
-          existingCerts.set(
-            `${row.boatName?.toLowerCase()}|${row.builder?.toLowerCase()}|${
-              row.issuedDate ? new Date(row.issuedDate).getFullYear() : '-'
-            }`,
-            row,
-          );
-        });
-      } catch (error) {
-        console.trace(error);
-        failedCount++;
-        if (failedCount >= 5) {
-          break;
-        }
-      }
-    } while (hasMoreData);
-  } catch (error) {
-    console.log(
-      `Getting ${organization} - ${certType} certs failed: ${
-        (error as AxiosError).response?.data
-      }`,
-    );
-  }
-  return {
-    existingCerts,
-    finishLoading,
-  };
-}
 
 async function getSubdirectories(mainFolder: string) {
   const subFolders = await readDirectory(mainFolder, { withFileTypes: true });
@@ -177,22 +124,17 @@ const folders = [
   },
 ];
 
-(async () => {
-  const { existingCerts, finishLoading } = await getExistingCerts(
-    organizations.orc,
-  );
-  if (!finishLoading) {
-    console.log('Failed to load existing certs, stopping');
-    process.exit(0);
-  }
-  console.log('Found existing certs: ', existingCerts.size);
+const mainFolder = '../../files';
+export async function parseJeiterPolars(
+  existingCerts: Map<string, ExistingCertMapData[]>,
+) {
   async function parseFolder(folder: string, isSubfolder: boolean) {
     const countrylessData: string[] = [];
     const validCerts: any[] = [];
     const duplicateCerts: any[] = [];
     const orcDirectory = path.resolve(
       __dirname,
-      `../files/jeiterPolars/${folder}`,
+      `${mainFolder}/jeiterPolars/${folder}`,
     );
     let filesToProcess: {
       subFolder?: string;
@@ -323,53 +265,66 @@ const folders = [
           originalId: `jeiterPolars_${folder}_${fileNameWithoutExt}`,
         });
 
-        const existKey = `${String(
-          boatName,
-        ).toLowerCase()}|${builder?.toLowerCase()}|${new Date(
+        const existKey = `${String(boatName).toLowerCase()}|${new Date(
           issuedDate,
         ).getFullYear()}`;
-        const existCert = existingCerts.get(existKey);
-        if (existCert) {
-          duplicateCerts.push(formattedCert);
-        } else {
-          validCerts.push(formattedCert);
-          existingCerts.set(existKey, {
-            syrfId: formattedCert.syrf_id,
-            organization: formattedCert.organization,
-            certType: formattedCert.cert_type,
-            certNumber: formattedCert.cert_number,
-            originalId: formattedCert.original_id,
-            boatName,
-            issuedDate,
-            country,
-            builder,
-          });
+        const existCerts = existingCerts.get(existKey);
+        let isExist = false;
+        if (existCerts) {
+          isExist =
+            existCerts.findIndex((existRow) => {
+              if (builder && builder === existRow.builder) {
+                return true;
+              }
+              return false;
+            }) !== -1;
         }
-        validCerts.push(formattedCert);
+
+        if (!isExist) {
+          validCerts.push(formattedCert);
+          const newData = {
+            boatName,
+            issueYear: year,
+            builder,
+          };
+          if (existCerts) {
+            existCerts.push(newData);
+          } else {
+            existingCerts.set(existKey, [newData]);
+          }
+        } else {
+          duplicateCerts.push(formattedCert);
+        }
       } catch (error) {
         console.log(fileName);
         console.trace(error);
       }
     }
 
-    if (!fs.existsSync(path.resolve(__dirname, `../files/jeiter`))) {
-      fs.mkdirSync(path.resolve(__dirname, `../files/jeiter`));
+    if (!fs.existsSync(path.resolve(__dirname, `${mainFolder}/jeiter`))) {
+      fs.mkdirSync(path.resolve(__dirname, `${mainFolder}/jeiter`));
     }
-    if (!fs.existsSync(path.resolve(__dirname, `../files/jeiter/${folder}`))) {
-      fs.mkdirSync(path.resolve(__dirname, `../files/jeiter/${folder}`));
+    if (
+      !fs.existsSync(path.resolve(__dirname, `${mainFolder}/jeiter/${folder}`))
+    ) {
+      fs.mkdirSync(path.resolve(__dirname, `${mainFolder}/jeiter/${folder}`));
     }
+    // TODO: Comment this if we only want the combined version
     fs.writeFileSync(
-      path.resolve(__dirname, `../files/jeiter/${folder}/valid.json`),
+      path.resolve(__dirname, `${mainFolder}/jeiter/${folder}/valid.json`),
       JSON.stringify(validCerts),
       'utf-8',
     );
     fs.writeFileSync(
-      path.resolve(__dirname, `../files/jeiter/${folder}/duplicates.json`),
+      path.resolve(__dirname, `${mainFolder}/jeiter/${folder}/duplicates.json`),
       JSON.stringify(duplicateCerts),
       'utf-8',
     );
     fs.writeFileSync(
-      path.resolve(__dirname, `../files/jeiter/${folder}/countryless.json`),
+      path.resolve(
+        __dirname,
+        `${mainFolder}/jeiter/${folder}/countryless.json`,
+      ),
       JSON.stringify(countrylessData),
       'utf-8',
     );
@@ -380,6 +335,8 @@ const folders = [
       validCertsCount: validCerts.length,
       duplicatesCount: duplicateCerts.length,
       countryLessCount: countrylessData.length,
+      filesToProcess: filesToProcess.length,
+      validCerts,
     };
   }
   const parseResults: {
@@ -389,14 +346,29 @@ const folders = [
     validCertsCount: number;
     duplicatesCount: number;
     countryLessCount: number;
+    filesToProcess: number;
   }[] = [];
+  let certToAdd: any[] = [];
   for (let i = 0; i < folders.length; i++) {
     const { folderName, isSubfolder } = folders[i];
-    const result = await parseFolder(folderName, isSubfolder);
+    const { validCerts, ...result } = await parseFolder(
+      folderName,
+      isSubfolder,
+    );
+    certToAdd.push(...validCerts);
     parseResults.push(result);
   }
+  fs.writeFileSync(
+    path.resolve(
+      __dirname,
+      `${mainFolder}/jeiter/combined_2015-2020ORC_valid.json`,
+    ),
+    JSON.stringify(certToAdd),
+    'utf-8',
+  );
+  console.log('ORC Jeiter Polar 2015 - 2020');
   console.table(parseResults);
-})();
+}
 
 /*
 created polar for reference
