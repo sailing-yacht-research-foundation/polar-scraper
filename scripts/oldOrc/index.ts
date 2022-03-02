@@ -6,6 +6,7 @@ import { searchExistingCert } from '../../src/services/certificateService';
 
 import { parseOrcJson } from './parseOrcJson';
 import { parseJeiterPolars } from './parseJeiterPolars';
+import { parseOrcByCountryPolars } from './parseOrcByCountryPolars';
 
 import { AxiosError } from 'axios';
 
@@ -122,6 +123,9 @@ async function getExistingORCCert() {
     existingCerts.size,
   );
   await parseJeiterPolars(existingCerts);
-  console.log('POST Existing cert size', existingCerts.size);
+  console.log('POST jeiter Existing cert size', existingCerts.size);
+
+  await parseOrcByCountryPolars(existingCerts);
+  console.log('POST ORC2020ByCountry Existing cert size', existingCerts.size);
   console.log('DONE');
 })();
