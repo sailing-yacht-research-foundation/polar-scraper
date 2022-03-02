@@ -34,25 +34,14 @@ const years = [
   '2020',
   '2021',
 ];
-
 const pdfFolder = path.resolve(__dirname, '../files/orc_cert_pdfs');
 
-// pdfParser.on('pdfParser_dataReady', (pdfData) => {
-//   console.log(JSON.stringify(pdfData));
-// });
-
-// pdfParser.loadPDF(
-//   '/Users/jon/Documents/SYRF/sailing-data/assorted-and-skipped/orc_cert_pdfs/3.pdf',
-// );
 let failedPdfParse: string[] = [];
 
 const readPdf = async (uri: string) => {
   const buffer = await readFile(uri);
   try {
     const data = await pdfParse(buffer);
-    // The content
-    // console.log('Content: ', data.text);
-    // console.log(uri.split('.pdf')[0]);
     const paths = uri.split('/');
     const filename = paths[paths.length - 1];
     const p = uri.split(filename)[0];
@@ -63,9 +52,8 @@ const readPdf = async (uri: string) => {
 };
 
 const convertPdfToText = async () => {
-  // files.length
   const files = await readDirectory(pdfFolder);
-  for (let index = 0; index < 20; index++) {
+  for (let index = 0; index < files.length; index++) {
     const file = files[index];
 
     if (file.endsWith('.pdf')) {
@@ -87,6 +75,8 @@ const parseOrcTexts = async () => {
   let classnames: string[] = [];
   let designers: string[] = [];
   let builders: string[] = [];
+  const certWithInvalidDates = [];
+  const certWithInvalidExpiry = [];
   const files = await readDirectory(`${pdfFolder}/textFiles`);
 
   const certs = [];
@@ -145,30 +135,47 @@ const parseOrcTexts = async () => {
 
         if (line.startsWith('Issued On')) {
           const date = line.split('Issued On')[1].split('/');
-          const dateValue = new Date(
-            '' +
-              date[2] +
-              '-' +
-              date[1].padStart(2, '0') +
-              '-' +
-              date[0].padStart(2, '0') +
-              'T00:00:00Z',
-          );
-          issuedDate = dateValue.toUTCString();
+          if (date.length !== 3) {
+            console.log(`File ${file} has invalid date issue: ${line}`);
+          } else {
+            let yearString = date[2];
+            if (yearString.length > 4) {
+              // The year is postfixed with something like Issued On03/02/2020 - VPP 2020 1.01
+              yearString = yearString.split(' ')[0];
+            }
+            const dateValue = new Date(
+              `${yearString}-${date[1].padStart(2, '0')}-${date[0].padStart(
+                2,
+                '0',
+              )}T00:00:00Z`,
+            );
+            issuedDate = dateValue.toUTCString();
+            if (issuedDate === 'Invalid Date') {
+              certWithInvalidDates.push(`${file} - ${line}`);
+            }
+          }
         }
 
         if (line.startsWith('Valid until')) {
           const date = line.split('Valid until')[1].split('/');
-          const dateValue = new Date(
-            '' +
-              date[2] +
-              '-' +
-              date[1].padStart(2, '0') +
-              '-' +
-              date[0].padStart(2, '0') +
-              'T00:00:00Z',
-          );
-          validUntil = dateValue.toUTCString();
+          if (date.length !== 3) {
+            console.log(`File ${file} has invalid expire date: ${line}`);
+          } else {
+            let yearString = date[2];
+            if (yearString.length > 4) {
+              yearString = yearString.split(' ')[0];
+            }
+            const dateValue = new Date(
+              `${yearString}-${date[1].padStart(2, '0')}-${date[0].padStart(
+                2,
+                '0',
+              )}T00:00:00Z`,
+            );
+            validUntil = dateValue.toUTCString();
+            if (issuedDate === 'Invalid Date') {
+              certWithInvalidExpiry.push(`${file} - ${line}`);
+            }
+          }
         }
 
         if (line.startsWith('IMSL')) {
@@ -676,10 +683,18 @@ const parseOrcTexts = async () => {
     `${pdfFolder}/result/certs_from_orc_pdfs.json`,
     JSON.stringify(certs),
   );
+  await writeFile(
+    `${pdfFolder}/result/invalid_cert_date.json`,
+    JSON.stringify(certWithInvalidDates),
+  );
+  await writeFile(
+    `${pdfFolder}/result/invalid_expiry_date.json`,
+    JSON.stringify(certWithInvalidExpiry),
+  );
 };
 
 (async () => {
-  await convertPdfToText();
+  // await convertPdfToText();
   // step 2 todo
   await parseOrcTexts();
 })();
