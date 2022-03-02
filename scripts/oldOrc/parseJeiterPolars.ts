@@ -14,14 +14,8 @@ import makeCert from '../../src/utils/makeCert';
 import getCountry from '../../src/utils/getCountry';
 import { convertKnotsToSecPerMile } from '../../src/utils/conversionUtils';
 import { organizations } from '../../src/enum';
-import { searchExistingCert } from '../../src/services/certificateService';
 
-import { AxiosError } from 'axios';
-import {
-  ExistingCertData,
-  Polar,
-  TimeAllowance,
-} from '../../src/types/GeneralType';
+import { Polar, TimeAllowance } from '../../src/types/GeneralType';
 import { ExistingCertMapData } from '.';
 
 type JeiterPolarGeneralFormat = {
