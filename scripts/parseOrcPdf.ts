@@ -90,7 +90,7 @@ const parseOrcTexts = async () => {
   const files = await readDirectory(`${pdfFolder}/textFiles`);
 
   const certs = [];
-  for (var index = 0; index < files.length; index++) {
+  for (let index = 0; index < files.length; index++) {
     const file = files[index];
 
     if (file.endsWith('.txt')) {
@@ -135,9 +135,9 @@ const parseOrcTexts = async () => {
       let issuedDate = '';
       let validUntil = '';
 
-      var hasPolars = false;
-      for (var lineCount = 0; lineCount < lines.length; lineCount++) {
-        var line = lines[lineCount];
+      let hasPolars = false;
+      for (let lineCount = 0; lineCount < lines.length; lineCount++) {
+        let line = lines[lineCount];
 
         if (line.startsWith('Dynamic Allowance')) {
           dynamicAllowance = line.split('Dynamic Allowance')[1];
@@ -146,7 +146,13 @@ const parseOrcTexts = async () => {
         if (line.startsWith('Issued On')) {
           const date = line.split('Issued On')[1].split('/');
           const dateValue = new Date(
-            '' + date[2] + '-' + date[1] + '-' + date[0] + 'T00:00:00',
+            '' +
+              date[2] +
+              '-' +
+              date[1].padStart(2, '0') +
+              '-' +
+              date[0].padStart(2, '0') +
+              'T00:00:00Z',
           );
           issuedDate = dateValue.toUTCString();
         }
@@ -154,7 +160,13 @@ const parseOrcTexts = async () => {
         if (line.startsWith('Valid until')) {
           const date = line.split('Valid until')[1].split('/');
           const dateValue = new Date(
-            '' + date[2] + '-' + date[1] + '-' + date[0] + 'T00:00:00',
+            '' +
+              date[2] +
+              '-' +
+              date[1].padStart(2, '0') +
+              '-' +
+              date[0].padStart(2, '0') +
+              'T00:00:00Z',
           );
           validUntil = dateValue.toUTCString();
         }
@@ -495,7 +507,7 @@ const parseOrcTexts = async () => {
           let windSpeeds: number[] = [];
           let speeds = line.split('Wind Velocity')[1].split(' kt');
           speeds.forEach((speed) => {
-            var s = parseInt(speed);
+            let s = parseInt(speed);
             if (!isNaN(s)) {
               windSpeeds.push(s);
             }
@@ -518,7 +530,7 @@ const parseOrcTexts = async () => {
           let currentVMG = '';
           let numDecimals = 0;
           let startCounting = false;
-          for (var i = 0; i < beatVMGString.length; i++) {
+          for (let i = 0; i < beatVMGString.length; i++) {
             if (beatVMGString.charAt(i) === ',') {
               currentVMG = currentVMG + '.';
             } else {
@@ -550,7 +562,7 @@ const parseOrcTexts = async () => {
           let currentSpeed: string = '';
           let numDecimals = 0;
           let startCounting = false;
-          for (var i = 0; i < polarString.length; i++) {
+          for (let i = 0; i < polarString.length; i++) {
             if (polarString.charAt(i) === ',') {
               currentSpeed = currentSpeed + '.';
             } else {
@@ -625,38 +637,38 @@ const parseOrcTexts = async () => {
         loaM: loa,
         mbM: mb,
         draftM: draft,
-        cdl: cdl,
+        cdl,
         lps: limitPositiveStability,
         si: stabilityIndex,
         loM: lengthOverall,
         maxBM: maximumBeam,
-        gph: gph,
-        measurementDate: measurementDate,
-        measurer: measurer,
-        hasPolars: hasPolars,
-        polars: polars,
-        timeAllowances: timeAllowances,
-        vppVersion: vppVersion,
-        sailNumber: sailNumber,
-        boatName: boatName,
-        series: series,
-        ageAllowance: ageAllowance,
-        age: age,
-        dynamicAllowance: dynamicAllowance,
-        imsl: imsl,
-        rl: rl,
-        vcgd: vcgd,
-        vcgm: vcgm,
-        sink: sink,
-        ws: ws,
-        lsm: lsm,
-        certNumber: certNumber,
-        orcRef: orcRef,
-        issuedDate: issuedDate,
-        validUntil: validUntil,
-        className: className,
-        designerName: designerName,
-        builderName: builderName,
+        gph,
+        measurementDate,
+        measurer,
+        hasPolars,
+        polars,
+        timeAllowances,
+        vppVersion,
+        sailNumber,
+        boatName,
+        series,
+        ageAllowance,
+        age,
+        dynamicAllowance,
+        imsl,
+        rl,
+        vcgd,
+        vcgm,
+        sink,
+        ws,
+        lsm,
+        certNumber,
+        orcRef,
+        issuedDate,
+        validUntil,
+        className,
+        designerName,
+        builderName,
       });
     }
   }
@@ -699,13 +711,12 @@ function formatLOA(loa: string) {
 }
 
 function formatVersion(version: string) {
-  var newVersion = version;
+  let newVersion = version;
   years.forEach((year) => {
-    //  newVersion = newVersion.replace(year, '')
+    newVersion = newVersion.replace(year, '');
   });
 
-  //return parseFloat(newVersion.trim())
-  return version;
+  return newVersion.trim();
 }
 
 function formatMB(mb: string) {
