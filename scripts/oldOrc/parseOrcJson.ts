@@ -123,7 +123,7 @@ export async function parseOrcJson(
       }
     }
 
-    if (!issuedDate || !expireDate || !country) {
+    if (!issuedDate || !expireDate) {
       invalidCerts.push(certificates[i]);
     } else {
       const issueYear = new Date(issuedDate).getFullYear().toString();
