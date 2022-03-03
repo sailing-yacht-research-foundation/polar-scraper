@@ -23,7 +23,7 @@ const mainFolder = path.resolve(__dirname, '../../files/jeiterPolars');
 //       return `: "${p2.replace(/"/g, '').replace(/'/g, '')}",`;
 //     });
 //   await writeFile(
-//     `${mainFolder}/fixed_2020_polars.json`,
+//     `${mainFolder}/FixedFiles/2020.json`,
 //     `[${fixedContent}`,
 //     'utf-8',
 //   );
@@ -46,7 +46,7 @@ const mainFolder = path.resolve(__dirname, '../../files/jeiterPolars');
 //     .replace(/(: ")(.*?)(",)/g, (match, p1, p2, p3) => {
 //       return `: "${p2.replace(/"/g, '').replace(/'/g, '')}",`;
 //     });
-//   await writeFile(`${mainFolder}/fixed_2021.json`, `${fixedContent}`, 'utf-8');
+//   await writeFile(`${mainFolder}/FixedFiles/2021.json`, `${fixedContent}`, 'utf-8');
 // })();
 
 (async () => {
@@ -64,5 +64,9 @@ const mainFolder = path.resolve(__dirname, '../../files/jeiterPolars');
     .replace(/(: ")(.*?)(",)/g, (match, p1, p2, p3) => {
       return `: "${p2.replace(/"/g, '').replace(/'/g, '')}",`;
     });
-  await writeFile(`${mainFolder}/fixed_2019.json`, `${fixedContent}`, 'utf-8');
+  await writeFile(
+    `${mainFolder}/FixedFiles/2019.json`,
+    `${fixedContent}`,
+    'utf-8',
+  );
 })();

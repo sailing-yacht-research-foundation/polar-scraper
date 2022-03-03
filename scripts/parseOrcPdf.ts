@@ -694,8 +694,8 @@ const parseOrcTexts = async () => {
 };
 
 (async () => {
-  // await convertPdfToText();
-  // step 2 todo
+  // Tips: Probably best to run this one by one if memory is an issue.
+  await convertPdfToText();
   await parseOrcTexts();
 })();
 

@@ -126,3 +126,8 @@ export const removeCert = async (id: string) => {
   );
   return result.data;
 };
+
+export const bulkSave = async (data: any) => {
+  const result = await elasticSearchAPI.post(`/${certIndexName}/_bulk`, data);
+  return result.data;
+};
