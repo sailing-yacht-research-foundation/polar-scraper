@@ -7,6 +7,7 @@ import { searchExistingCert } from '../../src/services/certificateService';
 import { parseOrcJson } from './parseOrcJson';
 import { parseJeiterPolars } from './parseJeiterPolars';
 import { parseOrcByCountryPolars } from './parseOrcByCountryPolars';
+import { parseFixedFolder } from './parseFixedFolder';
 
 import { AxiosError } from 'axios';
 
@@ -17,6 +18,49 @@ export type ExistingCertMapData = {
   issueYear?: string;
 };
 
+export type JeiterPolarGeneralFormat = {
+  rating: {
+    triple_offshore: number[];
+    gph: number;
+    triple_inshore: number[];
+  };
+  sailnumber: string;
+  name: string;
+  country?: string; // Folder 2015 & 2016-1 don't have this
+  owner: string;
+  boat: {
+    builder: string;
+    designer: string;
+    type: string;
+    sizes: {
+      beam: number;
+      spinnaker: number;
+      loa: number;
+      draft: number;
+      main: number;
+      genoa: number;
+      displacement: number;
+      spinnaker_asym: number;
+    };
+    year: string;
+  };
+  vpp: {
+    beat_vmg: number[];
+    '150': number[];
+    '135': number[];
+    '75': number[];
+    run_angle: number[];
+    '110': number[];
+    '52': number[];
+    beat_angle: number[];
+    angles: number[];
+    '120': number[];
+    '90': number[];
+    '60': number[];
+    speeds: number[];
+    run_vmg: number[];
+  };
+};
 /*
 Objective of this script would be to combine all scraping of old files in 1 go, so it can utilise the newly scraped
 certificates to check existing cert, instead of fetching to the Elastic Search every files, which will take a lot of query
@@ -127,5 +171,7 @@ async function getExistingORCCert() {
 
   await parseOrcByCountryPolars(existingCerts);
   console.log('POST ORC2020ByCountry Existing cert size', existingCerts.size);
+  await parseFixedFolder(existingCerts);
+  console.log('POST Fixed Corrup Files Cert size:', existingCerts.size);
   console.log('DONE');
 })();
