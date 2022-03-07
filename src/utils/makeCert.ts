@@ -60,7 +60,7 @@ export default function makeCert(data: MakeCertParam) {
     syrf_id: uuidv4(),
     organization,
     sub_organization: subOrganization,
-    cert_type: certType,
+    cert_type: certType || null,
     builder,
     owner: owner || null,
     cert_number: certNumber,

@@ -14,10 +14,33 @@ export type ElasticSearchQueryResult<T> = {
   };
 };
 
+export type Polar = {
+  windSpeeds: number[];
+  beatAngles: number[];
+  beatVMGs: number[];
+  polars: {
+    twa: number;
+    speeds: number[];
+  }[];
+  runVMGs: number[];
+  gybeAngles: number[];
+};
+
+export type TimeAllowance = {
+  windSpeeds: number[];
+  beatVMGs: number[];
+  timeAllowances: {
+    twa: number;
+    speeds: number[];
+  }[];
+  runVMGs: number[];
+  gybeAngles?: number[];
+};
+
 export type MakeCertParam = {
   organization: string;
   subOrganization?: string;
-  certType: string;
+  certType?: string;
   builder?: string;
   owner?: string;
   certNumber?: string;
@@ -33,35 +56,20 @@ export type MakeCertParam = {
   displacement?: number;
   extras: string;
   hasPolars: boolean;
-  polars?: {
-    windSpeeds: number[];
-    beatAngles: number[];
-    beatVMGs: number[];
-    polars: {
-      twa: number;
-      speeds: number[];
-    }[];
-    runVMGs: number[];
-    gybeAngles: number[];
-  };
+  polars?: Polar;
   hasTimeAllowances: boolean;
-  timeAllowances?: {
-    windSpeeds: number[];
-    beatVMGs: number[];
-    timeAllowances: {
-      twa: number;
-      speeds: number[];
-    }[];
-    runVMGs: number[];
-    gybeAngles: number[];
-  };
+  timeAllowances?: TimeAllowance;
   originalId: string;
 };
 
 export type ExistingCertData = {
   syrfId: string;
   organization: string;
-  certType: string;
-  certNumber: string;
+  certType: string | null;
+  certNumber?: string;
   originalId: string;
+  boatName?: string;
+  issuedDate?: string;
+  country?: string;
+  builder?: string;
 };

@@ -27,4 +27,15 @@ const deleteDoc = async (urlPath = '') => {
   return await api.delete(urlPath);
 };
 
-export default { query, push, deleteDoc };
+const post = async (path = '', data: any) => {
+  return await api.post(path, data, {
+    transformRequest: (req) => {
+      return req;
+    },
+    headers: {
+      'Content-Type': 'application/x-ndjson',
+    },
+  });
+};
+
+export default { query, push, deleteDoc, post };

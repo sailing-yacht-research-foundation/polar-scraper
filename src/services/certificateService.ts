@@ -12,6 +12,7 @@ export const searchExistingCert = async (
     certType?: string;
     originalId?: string;
   },
+  size: number,
   scrollId?: string,
 ): Promise<{ scrollId: string; data: ExistingCertData[] }> => {
   // Using scroll search. Our elasticsearch uses version 7.9, unable to use Point in Time searches (available at 7.10)
@@ -43,6 +44,10 @@ export const searchExistingCert = async (
     cert_type: string;
     cert_number: string;
     original_id: string;
+    builder?: string;
+    boat_name?: string;
+    issued_date?: string;
+    country?: string;
   }> = await elasticSearchAPI.query(
     scrollId ? `/_search/scroll` : `/${certIndexName}/_search?scroll=1m`,
     Object.assign(
@@ -64,8 +69,14 @@ export const searchExistingCert = async (
               'cert_type',
               'cert_number',
               'original_id',
+              'boat_name',
+              'issued_date',
+              'builder',
+              'cert_number',
+              'issued_date',
+              'country',
             ],
-            size: 10,
+            size,
           },
     ),
   );
@@ -78,8 +89,22 @@ export const searchExistingCert = async (
       cert_type: certType,
       cert_number: certNumber,
       original_id: originalId,
+      boat_name: boatName,
+      issued_date: issuedDate,
+      country,
+      builder,
     } = row._source;
-    return { syrfId, organization, certType, certNumber, originalId };
+    return {
+      syrfId,
+      organization,
+      certType,
+      certNumber,
+      originalId,
+      boatName,
+      issuedDate,
+      country,
+      builder,
+    };
   });
   return {
     scrollId: returnedScrollId,
@@ -99,5 +124,10 @@ export const removeCert = async (id: string) => {
   const result = await elasticSearchAPI.deleteDoc(
     `/${certIndexName}/_doc/${id}`,
   );
+  return result.data;
+};
+
+export const bulkSave = async (data: any) => {
+  const result = await elasticSearchAPI.post(`/${certIndexName}/_bulk`, data);
   return result.data;
 };
