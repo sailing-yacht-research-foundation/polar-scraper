@@ -44,4 +44,4 @@ Most of the scripts here is used as a one-time-script to parse the jsons and pdf
 
 ## Deployed Service
 
-The `Polar Scraper` is deployed as a `Scheduled Task` in an ECS Cluster (AWS), `Scraper Runner`, alongside the other scrapers. It's scheduled to run every 00:30 UTC and store newer certificates found from the cert websites.
+The `Polar Scraper` is deployed as a `Scheduled Task` in an ECS Cluster (AWS), `Scraper Runner`, alongside the other scrapers. It's scheduled to run every 00:30 UTC and store newer certificates found from the cert websites into the elastic search, index: `vessel-cert` which is defined in `src/enum.ts`.
